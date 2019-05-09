@@ -396,6 +396,21 @@ cmd_kheapstats(int nargs, char **args)
 	return 0;
 }
 
+/*
+ * Haoda's Commands
+ */
+static 
+int 
+cmd_dth(int nargs, char **args)
+{
+	(void)nargs; // unused parameters
+	(void)args; 	
+
+	dbflags = DB_THREADS; // 0x0010 = DB_THREADS
+
+	return 0;
+}
+
 ////////////////////////////////////////
 //
 // Menus.
@@ -505,6 +520,7 @@ static const char *mainmenu[] = {
 #endif /* UW */
 #endif
 	"[kh] Kernel heap stats              ",
+	"[dth] Enables debugging messages    ", // HAODA CHANGE
 	"[q] Quit and shut down              ",
 	NULL
 };
@@ -558,6 +574,8 @@ static struct {
 	{ "sp3",	traffic_simulation },
 #endif /* UW */
 #endif
+	/* Haoda's commands */
+	{ "dth",        cmd_dth },
 
 	/* stats */
 	{ "kh",         cmd_kheapstats },
