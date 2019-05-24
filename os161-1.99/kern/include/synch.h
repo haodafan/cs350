@@ -36,6 +36,7 @@
 
 
 #include <spinlock.h>
+//#include <thread.h> // Haoda addition
 
 /*
  * Dijkstra-style semaphore.
@@ -74,10 +75,10 @@ void V(struct semaphore *);
  */
 struct lock {
         char *lk_name;
-        thread *thread;
-        wchan *wchan; 
-        spinlock *spin; 
-        bool held; 
+        struct thread *owner;
+        struct wchan *wchan; 
+        struct spinlock spin; 
+        volatile bool held; 
         // add what you need here
         // (don't forget to mark things volatile as needed)
 };
@@ -118,6 +119,10 @@ void lock_destroy(struct lock *);
 struct cv {
         char *cv_name;
         // add what you need here
+        struct wchan *wchan; 
+        volatile bool fulfilled;
+        
+        
         // (don't forget to mark things volatile as needed)
 };
 

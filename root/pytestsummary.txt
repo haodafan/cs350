@@ -1,0 +1,401 @@
+
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.339829160 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.360133600 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.335775000 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.482931280 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.439574840 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.456389080 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.433480440 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.444289320 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.357922760 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.531068080 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.366669000 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.384635840 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.436868840 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.352870200 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.467681320 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.486988400 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.458527680 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.351002840 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.397637120 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.490623080 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.494878560 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.536880720 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.520926680 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.389829600 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.284835920 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.477388280 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.486137080 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.471780880 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.376867080 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.394519120 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.431026720 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.505632280 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.279494320 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.526287960 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.447227240 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.470378880 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.237029440 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.344883720 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.244188280 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.356983960 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.320782160 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.437376320 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.355672360 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.341829840 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.396931360 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.448481920 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.438021040 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.588277440 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.399690800 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.407831120 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.376182840 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.295975720 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.394588720 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.291276080 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.393828120 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.475185040 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.373530600 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.308277840 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.364268600 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.484578520 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.320335000 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.370236640 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.444867720 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.461531840 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.383793720 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.434033400 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.386876440 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.409864280 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.375275440 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.428783600 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.431965640 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.401524840 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.353388160 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.493967080 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.475725720 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.316631040 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.350480240 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.355628040 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.345591360 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.447214560 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.377285080 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.340296320 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.338167320 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.478774760 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.368982440 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.217635200 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.314226360 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.492382000 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.451477000 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.302365560 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.310981000 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.489264800 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.283279920 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.415072560 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.386076040 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.467468120 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.457377640 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.513094640 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.347725960 seconds
+189c189
+< Operation took 2.368035480 seconds
+---
+> Operation took 2.326309240 seconds
