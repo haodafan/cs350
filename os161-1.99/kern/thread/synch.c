@@ -174,25 +174,63 @@ lock_destroy(struct lock *lock)
         KASSERT(lock != NULL);
 
         // add stuff here as needed
-        
+        /* 
+        struct lock {
+                char *lk_name;
+                thread *thread;
+                wchan *wchan; 
+                spinlock *spin; 
+                bool held; 
+                // add what you need here
+                // (don't forget to mark things volatile as needed)
+        };
+        */
         kfree(lock->lk_name);
+        kfree(lock->thread);
+        kfree(lock->wchan);
+        kfree(lock->spin);
         kfree(lock);
 }
 
 void
 lock_acquire(struct lock *lock)
 {
-        // Write this
+        KASSERT(lock != NULL);
+        KASSERT(curthread->t_in_interrupt == false); //not sure what this does
 
-        (void)lock;  // suppress warning until code gets written
+	spinlock_acquire(&lock->spin);
+
+        while (lock->held) {
+		wchan_lock(lock->wchan); // lock the wait channel
+
+		spinlock_release(&lock->spin);
+
+                wchan_sleep(lock->wchan); // sleep the wait channel
+                //lock->held = TRUE;  // Having these two lines here actually doesn't make a lot of sense
+                //lock->owner = curthread;
+
+		spinlock_acquire(&lock->spin); // Acquire spinlock to check if the lock is held again
+        }
+
+        // This isn't the inclass solution I wrote down but by god it makes a lot more sense
+        lock->held = TRUE;
+        lock->owner = curthread;
+
+	spinlock_release(&wchan->lock);
 }
 
 void
 lock_release(struct lock *lock)
 {
-        // Write this
+        KASSERT(lock != NULL);
 
-        (void)lock;  // suppress warning until code gets written
+	spinlock_acquire(&lock->spin);
+
+        lock->held = false;
+        lock->owner = NULL;
+	wchan_wakeone(lock->wchan);
+
+	spinlock_release(&lock->spin);
 }
 
 bool

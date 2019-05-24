@@ -74,6 +74,10 @@ void V(struct semaphore *);
  */
 struct lock {
         char *lk_name;
+        thread *thread;
+        wchan *wchan; 
+        spinlock *spin; 
+        bool held; 
         // add what you need here
         // (don't forget to mark things volatile as needed)
 };
