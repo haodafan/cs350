@@ -21,7 +21,14 @@
 /*
  * replace this with declarations of any synchronization and other variables you need here
  */
-static struct semaphore *intersectionSem;
+// static struct semaphore *intersectionSem; // WE AINT GONNA USE NO SEMAPHORES IN THIS ONE 
+
+static struct lock *mutex; 
+
+// Conditional Variables and Variables
+static struct cv *unoccupied;
+bool volatile intersection_occupied; 
+
 
 
 /* 
@@ -36,10 +43,20 @@ intersection_sync_init(void)
 {
   /* replace this default implementation with your own implementation */
 
-  intersectionSem = sem_create("intersectionSem",1);
-  if (intersectionSem == NULL) {
-    panic("could not create intersection semaphore");
-  }
+  //intersectionSem = sem_create("intersectionSem",1);
+  //if (intersectionSem == NULL) {
+  //  panic("could not create intersection semaphore");
+  //}
+  
+  intersection_occupied = false;
+
+  // LOCKS
+  mutex = lock_create("mutex");
+
+  unoccupied = cv_create("unoccupied");
+  if (unoccupied == NULL)
+    panic("CONDITIONAL VALUE CREATION FAILED!!! ABORT ");
+
   return;
 }
 
@@ -54,8 +71,10 @@ void
 intersection_sync_cleanup(void)
 {
   /* replace this default implementation with your own implementation */
-  KASSERT(intersectionSem != NULL);
-  sem_destroy(intersectionSem);
+  //KASSERT(intersectionSem != NULL);
+  //sem_destroy(intersectionSem);
+  KASSERT(unoccupied != NULL);
+  cv_destroy(unoccupied); 
 }
 
 
@@ -78,8 +97,17 @@ intersection_before_entry(Direction origin, Direction destination)
   /* replace this default implementation with your own implementation */
   (void)origin;  /* avoid compiler complaint about unused parameter */
   (void)destination; /* avoid compiler complaint about unused parameter */
-  KASSERT(intersectionSem != NULL);
-  P(intersectionSem);
+  //KASSERT(intersectionSem != NULL);
+  //P(intersectionSem);
+  
+  // HAODA's VERSION 
+  lock_acquire(mutex); // NO INTERRUPTS! 
+    while (intersection_occupied) {
+      cv_wait(unoccupied, mutex); // wait for it to be unoccupied
+    }
+    // It's unoccupied! Quick, occupy it!! 
+    intersection_occupied = true; 
+  lock_release(mutex); // INTERRUPTS OK!
 }
 
 
@@ -100,6 +128,11 @@ intersection_after_exit(Direction origin, Direction destination)
   /* replace this default implementation with your own implementation */
   (void)origin;  /* avoid compiler complaint about unused parameter */
   (void)destination; /* avoid compiler complaint about unused parameter */
-  KASSERT(intersectionSem != NULL);
-  V(intersectionSem);
+  //KASSERT(intersectionSem != NULL);
+  //V(intersectionSem);
+  
+  lock_acquire(mutex);
+    intersection_occupied = false; // unoccupy the place
+    cv_signal(unoccupied, mutex); // tells the CV it is unoccupied
+  lock_release(mutex);
 }
