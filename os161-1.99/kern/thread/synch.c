@@ -316,6 +316,7 @@ cv_wait(struct cv *cv, struct lock *lock)
 void
 cv_signal(struct cv *cv, struct lock *lock)
 {
+	KASSERT(cv != NULL);
 	//lock_release(lock); // Need to release the lock i think
 	//wchan_unlock(cv->wchan); // is this necessary? 
 	wchan_wakeone(cv->wchan); // is this right? 
@@ -329,6 +330,7 @@ cv_signal(struct cv *cv, struct lock *lock)
 void
 cv_broadcast(struct cv *cv, struct lock *lock)
 {
+	KASSERT(cv != NULL);
 	// Same as cv_signal but for all threads in wake channel
 	//lock_release(lock); // Need to release the lock i think
 	//wchan_unlock(cv->wchan); // is this necessary? 
