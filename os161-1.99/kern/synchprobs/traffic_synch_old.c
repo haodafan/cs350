@@ -35,19 +35,19 @@ static struct lock *mutex;
 
 // To ensure these rules of the road are being followed, 
 // we need the following boolean conditions: 
-//int volatile occupied_destinations[4]; //N:0 E:1 S:2 W:3
-//int volatile occupied_origins[4];      //N:0 E:1 S:2 W:3
-//int volatile right_turns;
-
-// New System: "One Direction"
-// condition 1 is a strong independent condition who needs no other conditions to let traffic flow efficiently
-int volatile waiting_from[4]; // N:0 E:1 S:2 W:3 
-int volatile flow_direction;  // N:0 E:1 S:2 W:3
-
+int volatile occupied_destinations[4]; //N:0 E:1 S:2 W:3
+int volatile occupied_origins[4];      //N:0 E:1 S:2 W:3
+int volatile right_turns;
 int volatile intersection_vehicles;
 
-// NEW 
-static struct cv *go[4]; //N:0 E:1 S:2 W:3
+// We need the following conditional variables 
+static struct cv *new_conditions; // signal this CV every time the car leaves the intersection
+
+// Conditional Variables and Variables
+//static struct cv *unoccupied;
+//bool volatile intersection_occupied; 
+
+
 
 /* 
  * The simulation driver will call this function once before starting
@@ -70,21 +70,46 @@ intersection_sync_init(void)
   mutex = lock_create("mutex");
 
   // Conditional Variables 
-  for (int i = 0; i < 4; i++)
-  {
-    go[i] = cv_create("go");
-    if (go[i] == NULL)
-      panic("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-  }
+  new_conditions = cv_create("new conditions");
+  if (new_conditions == NULL)
+    panic("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
   
   // Boolean setup 
-  flow_direction = -1; 
+  right_turns = 0;
   intersection_vehicles = 0;
-  for (int i = 0; i < 4; i++)
+  for (int i = 0; i < 3; i++)
   {
-    waiting_from[i] = 0;
+    occupied_destinations[i] = false;
+    occupied_origins[i] = false;
   }
   
+  // OLD CODE
+  //unoccupied = cv_create("unoccupied");
+  //if (unoccupied == NULL)
+  //  panic("CONDITIONAL VALUE CREATION FAILED!!! ABORT ");
+
+  return;
+}
+
+// Haoda's functions
+void 
+update_direction(Direction d, int* dir_array, bool set)
+{
+  switch (d)
+    {
+    case north:
+      dir_array[0] = set;
+      break;
+    case east:
+      dir_array[1] = set;
+      break;
+    case south:
+      dir_array[2] = set;
+      break;
+    case west:
+      dir_array[3] = set;
+      break;
+    }
 }
 
 int 
@@ -109,8 +134,7 @@ dir_index(Direction d)
   return 0;
 }
 
-// Haoda's DIRECTION CHECKING FUNCTIONS (USELESS IN THE ONE DIRECTION SYSTEM)
-/*
+// Haoda's DIRECTION CHECKING FUNCTIONS 
 bool 
 all_false_except(Direction d, int volatile arr[])
 {
@@ -170,22 +194,6 @@ check_intersection(Direction origin, Direction destination)
 	 // If NONE of these conditions are satisfied, then you're done m8
 	 return false;
 }
-*/
-
-void 
-update_flow()
-{
-	int count = 0; // Prevent infinite loops
-	do 
-	{
-		count++; // Prevent infinite loops
-		flow_direction++; 
-		if (flow_direction > 3) flow_direction = 0;
-	} while (waiting_from[flow_direction] <= 0 && count <= 16);
-	
-	if (count >= 16)
-		flow_direction = -1; // RESET the ROAD
-}
 
 /* 
  * The simulation driver will call this function once after
@@ -200,12 +208,8 @@ intersection_sync_cleanup(void)
   /* replace this default implementation with your own implementation */
   //KASSERT(intersectionSem != NULL);
   //sem_destroy(intersectionSem);
-  
-  for (int i = 0; i < 4; i++)
-  {
-    KASSERT(go[i] != NULL);
-    cv_destroy(go[i]);
-  }
+  KASSERT(new_conditions != NULL);
+  cv_destroy(new_conditions); 
 }
 
 
@@ -226,27 +230,48 @@ void
 intersection_before_entry(Direction origin, Direction destination) 
 {
   lock_acquire(mutex);
-	int i_origin = dir_index(origin);
-	bool is_waiting = false;
-	
-	if (flow_direction == -1) // This is the FIRST CAR to enter
-	{
-		flow_direction = i_origin; 
-	}
-	
-	if (flow_direction != i_origin) // The flow direction is NOT in this car's favor
-	{
-		is_waiting = true;
-		waiting_from[i_origin]++; 
-		cv_wait(go[i_origin], mutex); 
-	}
-	
-	// At this point, go has been signaled
-	if (is_waiting)
-		waiting_from[i_origin]--;
-	intersection_vehicles++; 
-	
-	(void) destination; // Prevent stupid warnings 
+  if (intersection_vehicles >= 3)
+  {
+	  intersection_vehicles++; // set a breakpoint like here or something 
+	  intersection_vehicles--; 
+  }
+  lock_release(mutex); 
+
+  /* replace this default implementation with your own implementation */
+  //(void)origin;  /* avoid compiler complaint about unused parameter */
+  //(void)destination; /* avoid compiler complaint about unused parameter */
+  //KASSERT(intersectionSem != NULL);
+  //P(intersectionSem);
+  
+  // HAODA's VERSION 
+  //lock_acquire(mutex); // NO INTERRUPTS! 
+  //  while (intersection_occupied) {
+  //    cv_wait(unoccupied, mutex); // wait for it to be unoccupied
+  //  }
+  //  // It's unoccupied! Quick, occupy it!! 
+  //  intersection_occupied = true; 
+  //lock_release(mutex); // INTERRUPTS OK!
+  
+  // HAODA'S COMPLETE VERSION 
+  lock_acquire(mutex);
+  
+    while (check_intersection(origin, destination) == false)
+    {
+      cv_wait(new_conditions, mutex);
+    }
+  
+    occupied_destinations[dir_index(destination)]++;
+    occupied_origins[dir_index(origin)]++;
+    
+    // Right turn stuff
+    if ((dir_index(origin) - dir_index(destination) == 1
+        || dir_index(origin) - dir_index(destination) == -3))
+    {
+      right_turns++;
+      //cv_signal(new_conditions, mutex); // Signal new right turn 
+    }
+  
+  intersection_vehicles++;
   lock_release(mutex);
 }
 
@@ -264,16 +289,24 @@ intersection_before_entry(Direction origin, Direction destination)
 void
 intersection_after_exit(Direction origin, Direction destination) 
 {
+  /* replace this default implementation with your own implementation */
+  //(void)origin;  /* avoid compiler complaint about unused parameter */
+  //(void)destination; /* avoid compiler complaint about unused parameter */
+  //KASSERT(intersectionSem != NULL);
+  //V(intersectionSem);
+  
   lock_acquire(mutex);
-	intersection_vehicles--; 
-	if (intersection_vehicles == 0)
-	{
-		update_flow();
-		if (flow_direction != -1)
-			cv_broadcast(go[flow_direction], mutex);
-	}
+    occupied_origins[dir_index(origin)]--; // unoccupy the place
+	occupied_destinations[dir_index(destination)]--; 
 	
-	(void) origin; // Prevent stupid warnings
-	(void) destination;
+	// right turn stuff 
+	if ((dir_index(origin) - dir_index(destination) == 1 
+		|| dir_index(origin) - dir_index(destination) == -3))
+	{
+		right_turns--;
+    }
+	
+	intersection_vehicles--;
+    cv_broadcast(new_conditions, mutex); // tells the CV it is unoccupied
   lock_release(mutex);
 }
