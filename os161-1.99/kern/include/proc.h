@@ -38,6 +38,7 @@
 
 #include <spinlock.h>
 #include <thread.h> /* required for struct threadarray */
+#include <array.h> /* required for dynamic process arrays */
 
 struct addrspace;
 struct vnode;
@@ -69,6 +70,9 @@ struct proc {
 #endif
 
 	/* add more material here as needed */
+	pid_t p_id; // pid implementation
+	struct proc * p_parent; // parent-child implementation 
+	struct array * p_children;
 };
 
 /* This is the process structure for the kernel and for kernel-only threads. */

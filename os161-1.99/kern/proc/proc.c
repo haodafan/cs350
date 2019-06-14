@@ -66,10 +66,10 @@ static volatile unsigned int proc_count;
 /* it would be better to use a lock here, but we use a semaphore because locks are not implemented in the base kernel */ 
 static struct semaphore *proc_count_mutex;
 /* used to signal the kernel menu thread when there are no processes */
-struct semaphore *no_proc_sem;   
+struct semaphore *no_proc_sem; 
 #endif  // UW
 
-
+static volatile pid_t global_pid_count; // HAODA 
 
 /*
  * Create a proc structure.
@@ -102,6 +102,16 @@ proc_create(const char *name)
 #ifdef UW
 	proc->console = NULL;
 #endif // UW
+
+	// Haoda pid
+	spinlock_acquire(&proc->p_lock);
+		proc->p_id = global_pid_count;
+		global_pid_count++;
+	spinlock_release(&proc->p_lock);
+
+	// Haoda parent-child relationship 
+	proc->p_parent = NULL; 
+	proc->p_children = array_create();
 
 	return proc;
 }
@@ -193,6 +203,8 @@ proc_destroy(struct proc *proc)
 void
 proc_bootstrap(void)
 {
+  global_pid_count = 1; // haoda
+  
   kproc = proc_create("[kernel]");
   if (kproc == NULL) {
     panic("proc_create for kproc failed\n");
@@ -208,6 +220,8 @@ proc_bootstrap(void)
     panic("could not create no_proc_sem semaphore\n");
   }
 #endif // UW 
+
+  
 }
 
 /*
