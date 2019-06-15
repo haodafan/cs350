@@ -113,6 +113,13 @@ proc_create(const char *name)
 	proc->p_parent = NULL; 
 	proc->p_children = array_create();
 
+	// Haoda's waitpid and exit related things
+	proc->p_cvterm = cv_create(proc->p_name);
+	proc->p_lock = lock_create(proc->p_name);
+	proc->p_terminated = false; 
+	proc->p_status = 0;
+	proc->p_code = 0;
+
 	return proc;
 }
 

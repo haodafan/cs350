@@ -28,6 +28,21 @@ void sys__exit(int exitcode) {
 
   KASSERT(curproc->p_addrspace != NULL);
   as_deactivate();
+  
+  // HAODA's WAITPID STUFF 
+  proc->p_terminated = true; // the process is NOW TERMINATED
+  
+  // Determine exit status 
+  proc->p_status = exitcode; 
+
+  // Determine exit status? 
+
+  // wtf ??? 
+
+  // Now wake up the parent 
+  cv_signal(proc->p_cvterm, proc->p_lock);
+  
+  
   /*
    * clear p_addrspace before calling as_destroy. Otherwise if
    * as_destroy sleeps (which is quite possible) when we
@@ -51,7 +66,7 @@ void sys__exit(int exitcode) {
   panic("return from thread_exit in sys_exit\n");
 }
 
-#if OPT_A2
+//#if OPT_A2 //CHANGE THIS BACK
 // HAODA's FAT A2 IMPLEMENTATION 
 //int
 //sys_fork()
@@ -171,19 +186,19 @@ sys_waitpid(pid_t pid,
   // |-> if the child process is already terminated, the parent process will NOT sleep and simply return the return values (exit status, code) 
   //     from the child and continues to execute 
 
-
   // first you need to know who are your children
   // if the process id does not correspond to your children, then you must return an ERROR code
   bool isChild = false; 
+  struct proc * myChild;
   for (int i = 0; i < curproc->p_children->max; i++)
   {
-    if (pid == (array_get(curproc->p_children, i))->p_id)
+    if (pid == ((struct proc *) array_get(curproc->p_children, i))->p_id)
     {
       isChild = true;
+      myChild = (struct proc *) array_get(curproc->p_children, i); 
       break;
     }
   }
-
   if (!isChild) return 1; // or whatever error code corresponds with not having the right child 
 
   // You need to determine if your child process has terminated or not 
@@ -192,6 +207,12 @@ sys_waitpid(pid_t pid,
   //
   // If your child is still alive, you want to WAIT for your child to terminate - recommended: use a CV 
   // Since the parent waits for the child to terminate, the parent should call cv wait on the child's condition variable 
+  lock_acquire(myChild->p_lock);
+    if (!myChild->terminated)
+    {
+      cv_wait(myChild->p_cvterm, myChild->p_lock); // wait for child to terminate ...  
+    }
+  lock_release(myChild->p_lock);
 
   // Once you wake back up, your child process has terminated, thus you need to retrieve exit status and code 
   //
@@ -201,24 +222,18 @@ sys_waitpid(pid_t pid,
   int exitstatus;
   int result;
 
-  /* this is just a stub implementation that always reports an
-     exit status of 0, regardless of the actual exit status of
-     the specified process.   
-     In fact, this will return 0 even if the specified process
-     is still running, and even if it never existed in the first place.
-
-     Fix this!
-  */
+  exitstatus = myChild->p_status; 
+  result = myChild->p_code; 
 
   if (options != 0) {
     return(EINVAL);
   }
   /* for now, just pretend the exitstatus is 0 */
-  exitstatus = 0;
-  result = copyout((void *)&exitstatus,status,sizeof(int));
-  if (result) {
-    return(result);
-  }
+  //exitstatus = 0;
+  //result = copyout((void *)&exitstatus,status,sizeof(int));
+  //if (result) {
+  //  return(result);
+  //}
   *retval = pid;
   return(0);
 }

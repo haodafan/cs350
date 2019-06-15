@@ -73,6 +73,12 @@ struct proc {
 	pid_t p_id; // pid implementation
 	struct proc * p_parent; // parent-child implementation 
 	struct array * p_children;
+	struct cv * p_cvterm; 
+	struct lock * p_lock; 
+	
+	bool volatile p_terminated; 
+	int p_status; 
+	int p_code; 
 };
 
 /* This is the process structure for the kernel and for kernel-only threads. */
