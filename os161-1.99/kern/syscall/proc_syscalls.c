@@ -147,7 +147,6 @@ sys_fork(struct trapframe * parent_tf, pid_t * retval)
 	return 0;
 }
 
-// OLD CODE  ====================================================================
 /* stub handler for getpid() system call                */
 int
 sys_getpid(pid_t *retval)
@@ -166,6 +165,39 @@ sys_waitpid(pid_t pid,
 	    int options,
 	    pid_t *retval)
 {
+
+  // wait PID is a BARRIER
+  // it puts the parent process to SLEEP until the child process terminates
+  // |-> if the child process is already terminated, the parent process will NOT sleep and simply return the return values (exit status, code) 
+  //     from the child and continues to execute 
+
+
+  // first you need to know who are your children
+  // if the process id does not correspond to your children, then you must return an ERROR code
+  bool isChild = false; 
+  for (int i = 0; i < curproc->p_children->max; i++)
+  {
+    if (pid == (array_get(curproc->p_children, i))->p_id)
+    {
+      isChild = true;
+      break;
+    }
+  }
+
+  if (!isChild) return 1; // or whatever error code corresponds with not having the right child 
+
+  // You need to determine if your child process has terminated or not 
+  //
+  // Recommended: Have a lock for each process 
+  //
+  // If your child is still alive, you want to WAIT for your child to terminate - recommended: use a CV 
+  // Since the parent waits for the child to terminate, the parent should call cv wait on the child's condition variable 
+
+  // Once you wake back up, your child process has terminated, thus you need to retrieve exit status and code 
+  //
+  // How are you going to save your exit status and exit code? 
+  //   STRATEGY 1: create a skeleton structure 
+  //   STRATEGY 2: Add a boolean to the process structure, and an exit status and exit code 
   int exitstatus;
   int result;
 
