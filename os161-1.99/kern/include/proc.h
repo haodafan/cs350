@@ -75,6 +75,7 @@ struct proc {
 	pid_t p_id; // pid implementation
 	struct proc * p_parent; // parent-child implementation 
 	struct array * p_children;
+<<<<<<< HEAD
 	
 	// Additional synchronization components
 	struct lock* p_lk; 
