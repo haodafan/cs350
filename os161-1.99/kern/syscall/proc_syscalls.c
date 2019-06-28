@@ -12,6 +12,7 @@
 
 #include <opt-A2.h>
 #include <mips/trapframe.h>
+#include <synch.h>
 
   /* this implementation of sys__exit does not do anything with the exit code */
   /* this needs to be fixed to get exit() and waitpid() working properly */
@@ -30,17 +31,17 @@ void sys__exit(int exitcode) {
   as_deactivate();
   
   // HAODA's WAITPID STUFF 
-  proc->p_terminated = true; // the process is NOW TERMINATED
+  //p->p_terminated = true; // the process is NOW TERMINATED
   
   // Determine exit status 
-  proc->p_status = exitcode; 
+  //p->p_status = exitcode; 
 
   // Determine exit status? 
 
   // wtf ??? 
 
   // Now wake up the parent 
-  cv_signal(proc->p_cvterm, proc->p_lock);
+  //cv_signal(proc->p_cvterm, proc->p_lock);
   
   
   /*
@@ -179,11 +180,11 @@ sys_getpid(pid_t *retval)
 
 int
 sys_waitpid(pid_t pid,
+      userptr_t status,
       int options,
       pid_t *retval)
-	    userptr_t status,
 {
-
+  (void) status;
   // wait PID is a BARRIER
   // it puts the parent process to SLEEP until the child process terminates
   // |-> if the child process is already terminated, the parent process will NOT sleep and simply return the return values (exit status, code) 
@@ -193,12 +194,18 @@ sys_waitpid(pid_t pid,
   // if the process id does not correspond to your children, then you must return an ERROR code
   bool isChild = false; 
   struct proc * myChild;
-  for (int i = 0; i < curproc->p_children->max; i++)
+  for (unsigned int i = 0; i < proctable->max; i++)
   {
-    if (pid == ((struct proc *) array_get(curproc->p_children, i))->p_id)
+    if (pid == ((struct proc *) array_get(proctable, i))->p_id)
     {
-      isChild = true;
-      myChild = (struct proc *) array_get(curproc->p_children, i); 
+      isChild = true; // this might be your child!! :)
+      //struct proc * process_in_question = array_get(proctable, i);
+      myChild = array_get(proctable, i);
+      if (myChild->p_parent->p_id != curproc->p_id)
+      {
+         // IF THE PROCESS WITH THE INPUTTED ID DOES NOT HAVE YOU AS A PARENT, IT IS NOT UR CHILD
+	 isChild = false;
+      }
       break;
     }
   }
@@ -219,11 +226,11 @@ sys_waitpid(pid_t pid,
   // How are you going to save your exit status and exit code? 
   //   STRATEGY 1: create a skeleton structure 
   //   STRATEGY 2: Add a boolean to the process structure, and an exit status and exit code 
-  int exitstatus;
-  int result;
+  //int exitstatus;
+  //int result
 
-  exitstatus = myChild->p_status; 
-  result = myChild->p_code; 
+  //exitstatus = myChild->p_status; 
+  //result = myChild->p_code; 
 
   if (options != 0) {
     return(EINVAL);

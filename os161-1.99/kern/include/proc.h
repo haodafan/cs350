@@ -87,9 +87,9 @@ struct proc {
 };
 
 /* proctable is a global array of process pointers*/
-volatile struct array * proctable; 
-volatile struct lock * master_lock; 
-volatile struct cv * master_condition;
+struct array * proctable; 
+struct lock * master_lock; 
+struct cv * master_condition;
 
 /* This is the process structure for the kernel and for kernel-only threads. */
 extern struct proc *kproc;

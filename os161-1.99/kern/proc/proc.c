@@ -71,8 +71,6 @@ struct semaphore *no_proc_sem;
 
 static volatile pid_t global_pid_count; // HAODA
 
-static volatile  
-
 /*
  * Create a proc structure.
  */
@@ -106,10 +104,10 @@ proc_create(const char *name)
 #endif // UW
 	
 	// Haoda pid
-	spinlock_acquire(&proc->p_lock);
+	lock_acquire(master_lock);
 		proc->p_id = global_pid_count;
 		global_pid_count++;
-	spinlock_release(&proc->p_lock);
+	lock_release(master_lock);
 
 	// Haoda parent-child relationship 
 	proc->p_parent = NULL; 
@@ -213,7 +211,12 @@ void
 proc_bootstrap(void)
 {
   global_pid_count = 1; // haoda
-  
+  // Haoda's code : Initialize the process table
+  proctable = array_create();
+  //array_add(proctable, kproc, NULL);
+  master_lock = lock_create("master_lock");
+
+
   kproc = proc_create("[kernel]");
   if (kproc == NULL) {
     panic("proc_create for kproc failed\n");
@@ -229,11 +232,6 @@ proc_bootstrap(void)
     panic("could not create no_proc_sem semaphore\n");
   }
 #endif // UW 
-  
-  // Haoda's code : Initialize the process table 
-  proctable = array_create; 
-  array_add(proctable, kproc, NULL);
-  master_lock = lock_create("master_lock");
 }
 
 /*
