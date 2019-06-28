@@ -74,17 +74,22 @@ struct proc {
 	/* add more material here as needed */
 	pid_t p_id; // pid implementation
 	struct proc * p_parent; // parent-child implementation 
-	struct array * p_children;
+	//struct array * p_children;
 	
 	// Additional synchronization components
-	struct lock* p_lk; 
-	struct cv* p_cv; /* Control Variable */
+	// struct lock* p_lk; 
+	//struct cv* p_cv; /* Control Variable */
 	
 	// Process status(es)
 	bool terminated; 
 	int child_retval; 
 	int child_status;
 };
+
+/* proctable is a global array of process pointers*/
+volatile struct array * proctable; 
+volatile struct lock * master_lock; 
+volatile struct cv * master_condition;
 
 /* This is the process structure for the kernel and for kernel-only threads. */
 extern struct proc *kproc;

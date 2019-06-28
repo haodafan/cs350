@@ -69,7 +69,9 @@ static struct semaphore *proc_count_mutex;
 struct semaphore *no_proc_sem; 
 #endif  // UW
 
-static volatile pid_t global_pid_count; // HAODA 
+static volatile pid_t global_pid_count; // HAODA
+
+static volatile  
 
 /*
  * Create a proc structure.
@@ -111,11 +113,11 @@ proc_create(const char *name)
 
 	// Haoda parent-child relationship 
 	proc->p_parent = NULL; 
-	proc->p_children = array_create();
+	//proc->p_children = array_create();
 
 	// Haoda additional control variables 
-	proc->p_lk = lock_create(name);
-	proc->p_cv = cv_create(name);
+	//proc->p_lk = lock_create(name);
+	//proc->p_cv = cv_create(name);
 	
 	// Process status 
 	proc->terminated = 0; 
@@ -227,8 +229,11 @@ proc_bootstrap(void)
     panic("could not create no_proc_sem semaphore\n");
   }
 #endif // UW 
-
   
+  // Haoda's code : Initialize the process table 
+  proctable = array_create; 
+  array_add(proctable, kproc, NULL);
+  master_lock = lock_create("master_lock");
 }
 
 /*

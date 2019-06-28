@@ -131,7 +131,10 @@ sys_fork(struct trapframe * parent_tf, pid_t * retval)
 	// 	point the child to the parent process  
 	// 	dynamic array of pointers to children
 	child->p_parent = curproc;
-	array_add(curproc->p_children, child, NULL);
+	//array_add(curproc->p_children, child, NULL);
+  lock_acquire(master_lock);
+    array_add(proctable, child, NULL); // new doctrine
+  lock_release(master_lock);
 	
 	// 4) Create a thread 
 	//      We want to add our new thread to our CHILD process => second param is child process
@@ -176,9 +179,9 @@ sys_getpid(pid_t *retval)
 
 int
 sys_waitpid(pid_t pid,
+      int options,
+      pid_t *retval)
 	    userptr_t status,
-	    int options,
-	    pid_t *retval)
 {
 
   // wait PID is a BARRIER
@@ -207,9 +210,9 @@ sys_waitpid(pid_t pid,
   //
   // If your child is still alive, you want to WAIT for your child to terminate - recommended: use a CV 
   // Since the parent waits for the child to terminate, the parent should call cv wait on the child's condition variable 
-  lock_acquire(curproc->p_lk);
-    cv_wait(curproc->p_cv, curproc->lk);
-  lock_release(curproc->p_lk);
+  lock_acquire(master_lock);
+    cv_wait(master_condition, master_lock);
+  lock_release(master_lock);
 
   // Once you wake back up, your child process has terminated, thus you need to retrieve exit status and code 
   //
