@@ -303,6 +303,8 @@ cv_destroy(struct cv *cv)
 void
 cv_wait(struct cv *cv, struct lock *lock)
 {
+	KASSERT(lock_do_i_hold(lock));
+	
 	// (based on in-class chalkboard code)
 	wchan_lock(cv->wchan);
 	lock_release(lock);

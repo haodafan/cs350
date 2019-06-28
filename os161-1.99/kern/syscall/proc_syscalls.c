@@ -192,6 +192,9 @@ sys_waitpid(pid_t pid,
   //
   // If your child is still alive, you want to WAIT for your child to terminate - recommended: use a CV 
   // Since the parent waits for the child to terminate, the parent should call cv wait on the child's condition variable 
+  lock_acquire(curproc->p_lk);
+    cv_wait(curproc->p_cv, curproc->lk);
+  lock_release(curproc->p_lk);
 
   // Once you wake back up, your child process has terminated, thus you need to retrieve exit status and code 
   //

@@ -102,7 +102,7 @@ proc_create(const char *name)
 #ifdef UW
 	proc->console = NULL;
 #endif // UW
-
+	
 	// Haoda pid
 	spinlock_acquire(&proc->p_lock);
 		proc->p_id = global_pid_count;
@@ -113,6 +113,13 @@ proc_create(const char *name)
 	proc->p_parent = NULL; 
 	proc->p_children = array_create();
 
+	// Haoda additional control variables 
+	proc->p_lk = lock_create(name);
+	proc->p_cv = cv_create(name);
+	
+	// Process status 
+	proc->terminated = 0; 
+	
 	return proc;
 }
 

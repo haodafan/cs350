@@ -51,6 +51,8 @@ struct semaphore;
  */
 struct proc {
 	char *p_name;			/* Name of this process */
+	
+	// Synchronization controls 
 	struct spinlock p_lock;		/* Lock for this structure */
 	struct threadarray p_threads;	/* Threads in this process */
 
@@ -73,6 +75,15 @@ struct proc {
 	pid_t p_id; // pid implementation
 	struct proc * p_parent; // parent-child implementation 
 	struct array * p_children;
+	
+	// Additional synchronization components
+	struct lock* p_lk; 
+	struct cv* p_cv; /* Control Variable */
+	
+	// Process status(es)
+	bool terminated; 
+	int child_retval; 
+	int child_status;
 };
 
 /* This is the process structure for the kernel and for kernel-only threads. */
