@@ -82,8 +82,8 @@ struct proc {
 	
 	// Process status(es)
 	bool terminated; 
-	int child_retval; 
-	int child_status;
+	bool safe_to_delete; 
+	int p_exitcode; 
 };
 
 /* proctable is a global array of process pointers*/

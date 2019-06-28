@@ -119,6 +119,7 @@ proc_create(const char *name)
 	
 	// Process status 
 	proc->terminated = 0; 
+	proc->safe_to_delete = 0;
 	
 	return proc;
 }

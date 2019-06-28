@@ -31,18 +31,25 @@ void sys__exit(int exitcode) {
   as_deactivate();
   
   // HAODA's WAITPID STUFF 
-  //p->p_terminated = true; // the process is NOW TERMINATED
+  p->p_terminated = true; // the process is NOW TERMINATED
   
   // Determine exit status 
-  //p->p_status = exitcode; 
+  p->p_exitcode = exitcode;
 
-  // Determine exit status? 
+  // Wake up sleeping threads 
+  cv_broadcast(master_condition, master_lock);
 
-  // wtf ??? 
-
-  // Now wake up the parent 
-  //cv_signal(proc->p_cvterm, proc->p_lock);
-  
+  // We cannot yet proceed with full deletion... 
+  lock_acquire(master_lock);
+    // 3 conditions for deletion: 
+    //     * no parent 
+    //     * parent is terminated 
+    //     * parent has called waitpid (parent will set safe_to_delete in waitpid)
+    while (!p->safe_to_delete || !p->p_parent->terminated || p->parent == NULL)
+    {
+      cv_wait(master_condition, master_lock);
+    }
+  lock_release(master_lock);
   
   /*
    * clear p_addrspace before calling as_destroy. Otherwise if
@@ -209,16 +216,17 @@ sys_waitpid(pid_t pid,
       break;
     }
   }
-  if (!isChild) return 1; // or whatever error code corresponds with not having the right child 
+  if (!isChild) return ESRCH; // this means no such process, idk if it should return that if the process isnt a child 
 
   // You need to determine if your child process has terminated or not 
-  //
-  // Recommended: Have a lock for each process 
-  //
+
   // If your child is still alive, you want to WAIT for your child to terminate - recommended: use a CV 
   // Since the parent waits for the child to terminate, the parent should call cv wait on the child's condition variable 
   lock_acquire(master_lock);
+  while (!myChild->terminated)
+  {
     cv_wait(master_condition, master_lock);
+  }
   lock_release(master_lock);
 
   // Once you wake back up, your child process has terminated, thus you need to retrieve exit status and code 
@@ -226,21 +234,25 @@ sys_waitpid(pid_t pid,
   // How are you going to save your exit status and exit code? 
   //   STRATEGY 1: create a skeleton structure 
   //   STRATEGY 2: Add a boolean to the process structure, and an exit status and exit code 
-  //int exitstatus;
-  //int result
 
-  //exitstatus = myChild->p_status; 
-  //result = myChild->p_code; 
 
+  // Note that exitstatus is your child's exit code
+
+  int exitstatus = _MKWAIT_EXIT(myChild->p_exitcode); //?????????????
+  myChild->safe_to_delete = 1; // we can put our dead child to rest :'( 
+  
   if (options != 0) {
     return(EINVAL);
   }
+
+  // ??? 
+
   /* for now, just pretend the exitstatus is 0 */
   //exitstatus = 0;
-  //result = copyout((void *)&exitstatus,status,sizeof(int));
-  //if (result) {
-  //  return(result);
-  //}
+  int result = copyout((void *)&exitstatus,status,sizeof(int));
+  if (result) {
+    return(result);
+  }
   *retval = pid;
   return(0);
 }
