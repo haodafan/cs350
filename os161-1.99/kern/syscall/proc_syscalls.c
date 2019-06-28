@@ -66,7 +66,7 @@ void sys__exit(int exitcode) {
   panic("return from thread_exit in sys_exit\n");
 }
 
-//#if OPT_A2 //CHANGE THIS BACK
+#if OPT_A2 //CHANGE THIS BACK
 // HAODA's FAT A2 IMPLEMENTATION 
 //int
 //sys_fork()
