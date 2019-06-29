@@ -31,7 +31,7 @@ void sys__exit(int exitcode) {
   as_deactivate();
   
   // HAODA's WAITPID STUFF 
-  p->p_terminated = true; // the process is NOW TERMINATED
+  p->terminated = true; // the process is NOW TERMINATED
   
   // Determine exit status 
   p->p_exitcode = exitcode;
@@ -45,12 +45,34 @@ void sys__exit(int exitcode) {
     //     * no parent 
     //     * parent is terminated 
     //     * parent has called waitpid (parent will set safe_to_delete in waitpid)
-    while (!p->safe_to_delete || !p->p_parent->terminated || p->parent == NULL)
+    while (!p->safe_to_delete && p->p_parent != NULL && !p->p_parent->terminated)
     {
       cv_wait(master_condition, master_lock);
     }
   lock_release(master_lock);
-  
+
+  // REMOVE PROCESS FROM PROCESS TABLE
+  lock_acquire(master_lock); 
+  for (unsigned int i = 0; i < proctable->max; i++)
+  {
+    struct proc * proc_in_question = array_get(proctable, i);
+    if (proc_in_question->p_id == p->p_id)
+      array_remove(proctable, i);
+  }
+  lock_release(master_lock);
+
+  // REMOVE PROCESS FROM CHILDREN
+  lock_acquire(master_lock); 
+  for (unsigned int i = 0; i < proctable->max; i++) 
+  {
+    struct proc * proc_in_question = array_get(proctable, i); 
+    if (proc_in_question->p_parent->p_id == p->p_id)
+      proc_in_question->p_parent = NULL;
+  } 
+  lock_release(master_lock);
+
+
+
   /*
    * clear p_addrspace before calling as_destroy. Otherwise if
    * as_destroy sleeps (which is quite possible) when we
@@ -139,10 +161,6 @@ sys_fork(struct trapframe * parent_tf, pid_t * retval)
 	// 	point the child to the parent process  
 	// 	dynamic array of pointers to children
 	child->p_parent = curproc;
-	//array_add(curproc->p_children, child, NULL);
-  lock_acquire(master_lock);
-    array_add(proctable, child, NULL); // new doctrine
-  lock_release(master_lock);
 	
 	// 4) Create a thread 
 	//      We want to add our new thread to our CHILD process => second param is child process
@@ -240,7 +258,8 @@ sys_waitpid(pid_t pid,
 
   int exitstatus = _MKWAIT_EXIT(myChild->p_exitcode); //?????????????
   myChild->safe_to_delete = 1; // we can put our dead child to rest :'( 
-  
+  cv_broadcast(master_condition, master_lock);
+
   if (options != 0) {
     return(EINVAL);
   }

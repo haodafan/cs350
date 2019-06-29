@@ -121,6 +121,11 @@ proc_create(const char *name)
 	proc->terminated = 0; 
 	proc->safe_to_delete = 0;
 	
+	// Add to Process Table 
+	lock_acquire(master_lock);
+	  array_add(proctable, proc, NULL);
+	lock_release(master_lock);
+
 	return proc;
 }
 
@@ -216,7 +221,7 @@ proc_bootstrap(void)
   proctable = array_create();
   //array_add(proctable, kproc, NULL);
   master_lock = lock_create("master_lock");
-
+  master_condition = cv_create("master_condition");
 
   kproc = proc_create("[kernel]");
   if (kproc == NULL) {
