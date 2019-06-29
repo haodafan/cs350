@@ -81,7 +81,7 @@ struct proc {
 	//struct cv* p_cv; /* Control Variable */
 	
 	// Process status(es)
-	bool terminated; 
+	bool terminated; // redundant? 
 	bool safe_to_delete; 
 	int p_exitcode; 
 };
@@ -90,6 +90,17 @@ struct proc {
 struct array * proctable; 
 struct lock * master_lock; 
 struct cv * master_condition;
+
+// New Idea: dont delete, just leave behind a SKELETON 
+struct skeleboi 
+{
+	// the process
+	struct proc * p_this; 
+	struct proc * p_parent
+	pid_t p_id;
+	bool terminated; 
+	int exitcode; 
+};
 
 /* This is the process structure for the kernel and for kernel-only threads. */
 extern struct proc *kproc;

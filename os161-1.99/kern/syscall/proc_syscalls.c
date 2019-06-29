@@ -36,9 +36,7 @@ void sys__exit(int exitcode) {
   // Determine exit status 
   p->p_exitcode = exitcode;
 
-  // Wake up sleeping threads 
-  cv_broadcast(master_condition, master_lock);
-
+/*// OLD DOCTRINE : DIRECT PROCTABLE 
   // We cannot yet proceed with full deletion... 
   lock_acquire(master_lock);
     // 3 conditions for deletion: 
@@ -49,29 +47,42 @@ void sys__exit(int exitcode) {
     {
       cv_wait(master_condition, master_lock);
     }
-  lock_release(master_lock);
+  lock_release(master_lock);*/
 
-  // REMOVE PROCESS FROM PROCESS TABLE
+  // NEW DOCTRINE: SKELETON PROCTABLE 
+  // UPDATE THE PROCESS TABLE 
   lock_acquire(master_lock); 
-  for (unsigned int i = 0; i < proctable->max; i++)
-  {
-    struct proc * proc_in_question = array_get(proctable, i);
-    if (proc_in_question->p_id == p->p_id)
-      array_remove(proctable, i);
-  }
+    for (unsigned int i = 0; i < proctable->max; i++)
+    {
+      struct skeleboi * skeleboi_in_question = array_get(proctable, i);
+
+      // IF THE PROCESS IS THIS PROCESS AND THE PARENT IS NULL 
+      //    THEN WE REMOVE THIS PROCESS FROM THE TABLE 
+      if (skeleboi_in_question->p_id == p->p_id && skeleboi_in_question->p_parent == NULL)
+      {
+        array_remove(proctable, i);
+        kfree(skeleboi_in_question);
+      }
+      // IF THE PROCESS IS THIS PROCESS AND THE PARENT IS NOT NULL
+      //    THEN WE UPDATE THE PROCESS TO AN EMPTY SKELETON 
+      else if (skeleboi_in_question->p_id == p->p_id)
+      {
+        skeleboi_in_question->p_this = NULL;
+        skeleboi_in_question->terminated = true; 
+        skeleboi_in_question->exitcode = exitcode;
+      }
+      // IF THE PROCESS IS A CHILD OF THIS PROCESS AND THE PROCESS IS AN EMPTY SKELETON 
+      //    THEN WE REMOVE THIS PROCESS FROM THE TABLE (since we can't call waitpid on it)
+      else if (skeleboi_in_question->p_parent->p_id == p->p_id && skeleboi_in_question->p_this == NULL)
+      {
+        array_remove(proctable, i);
+        kfree(skeleboi_in_question);
+      }
+    }
   lock_release(master_lock);
 
-  // REMOVE PROCESS FROM CHILDREN
-  lock_acquire(master_lock); 
-  for (unsigned int i = 0; i < proctable->max; i++) 
-  {
-    struct proc * proc_in_question = array_get(proctable, i); 
-    if (proc_in_question->p_parent->p_id == p->p_id)
-      proc_in_question->p_parent = NULL;
-  } 
-  lock_release(master_lock);
-
-
+  // Wake up sleeping threads 
+  cv_broadcast(master_condition, master_lock);
 
   /*
    * clear p_addrspace before calling as_destroy. Otherwise if
@@ -161,7 +172,19 @@ sys_fork(struct trapframe * parent_tf, pid_t * retval)
 	// 	point the child to the parent process  
 	// 	dynamic array of pointers to children
 	child->p_parent = curproc;
-	
+  // Create relationship in proctable (NEW DOCTRINE : SKELETON PROCTABLE : STRATEGY 1)
+	lock_acquire(master_lock); 
+    for (unsigned int i = 0; i < proctable->max; i++)
+    {
+      struct skeleboi * skeleboi_in_question = array_get(proctable, i);
+      if (skeleboi_in_question->p_id == child->p_id) // child process skeleton detected
+      {
+        skeleboi_in_question->p_parent = curproc;
+        break;
+      }
+    }
+  lock_release(master_lock);
+
 	// 4) Create a thread 
 	//      We want to add our new thread to our CHILD process => second param is child process
 	//      thread_fork function param is the ENTRY POINT function => 
@@ -218,30 +241,36 @@ sys_waitpid(pid_t pid,
   // first you need to know who are your children
   // if the process id does not correspond to your children, then you must return an ERROR code
   bool isChild = false; 
-  struct proc * myChild;
-  for (unsigned int i = 0; i < proctable->max; i++)
+  struct skeleboi * s_myChild;
+  for (unsigned int i = 0; i < proctable->max; i++) // NEW DOCTRINE: SKELETON PROCTABLE (STRATEGY ONE)
   {
-    if (pid == ((struct proc *) array_get(proctable, i))->p_id)
+    struct skeleboi* skeleboi_in_question = array_get(proctable, i);
+    if (pid == skeleboi_in_question->p_id)
     {
-      isChild = true; // this might be your child!! :)
-      //struct proc * process_in_question = array_get(proctable, i);
-      myChild = array_get(proctable, i);
-      if (myChild->p_parent->p_id != curproc->p_id)
+      // If this is NOT your child ... 
+      if (skeleboi_in_question->p_parent == NULL || skeleboi_in_question->p_parent->p_id != curproc->p_id)
       {
-         // IF THE PROCESS WITH THE INPUTTED ID DOES NOT HAVE YOU AS A PARENT, IT IS NOT UR CHILD
-	 isChild = false;
+        return ESRCH; // this is the code for 'no such process', idk if its the appropriate one
       }
+      isChild = true; 
+      s_myChild = skeleboi_in_question; 
+      //if (s_myChild->p_this == NULL)
+      //  return ERSCH; // no such process
       break;
     }
   }
-  if (!isChild) return ESRCH; // this means no such process, idk if it should return that if the process isnt a child 
+  if (!isChild)
+    return ERSCH; // no such process 
+
+
+
 
   // You need to determine if your child process has terminated or not 
 
   // If your child is still alive, you want to WAIT for your child to terminate - recommended: use a CV 
   // Since the parent waits for the child to terminate, the parent should call cv wait on the child's condition variable 
   lock_acquire(master_lock);
-  while (!myChild->terminated)
+  while (!s_myChild->terminated)
   {
     cv_wait(master_condition, master_lock);
   }
@@ -255,11 +284,15 @@ sys_waitpid(pid_t pid,
 
 
   // Note that exitstatus is your child's exit code
-
-  int exitstatus = _MKWAIT_EXIT(myChild->p_exitcode); //?????????????
-  myChild->safe_to_delete = 1; // we can put our dead child to rest :'( 
-  cv_broadcast(master_condition, master_lock);
-
+  // STRATEGY 2 : OBSELETE 
+  //int exitstatus = _MKWAIT_EXIT(myChild->p_exitcode); //?????????????
+  //myChild->safe_to_delete = 1; // we can put our dead child to rest :'( 
+  //cv_broadcast(master_condition, master_lock);
+  
+  // STRATEGY 1
+  int exitstatus = _MKWAIT_EXIT(s_myChild->exitcode); // ???
+  // No need to tell dead child it can delete itself
+  
   if (options != 0) {
     return(EINVAL);
   }

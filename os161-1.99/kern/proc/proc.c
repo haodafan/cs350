@@ -118,12 +118,19 @@ proc_create(const char *name)
 	//proc->p_cv = cv_create(name);
 	
 	// Process status 
-	proc->terminated = 0; 
-	proc->safe_to_delete = 0;
+	proc->terminated = 0; //legacy
+	proc->safe_to_delete = 0; //legacy
 	
 	// Add to Process Table 
+	struct skeleboi * skeleton = kmalloc(sizeof(*skeleton));
+	skeleton->p_id = proc->p_id; 
+	skeleton->p_parent = NULL; // Don't know the parent yet
+	skeleton->p_this = proc; 
+	skeleton->terminated = proc->terminated; 
+	// no exit status, has not exited yet
+
 	lock_acquire(master_lock);
-	  array_add(proctable, proc, NULL);
+	  array_add(proctable, skeleton, NULL);
 	lock_release(master_lock);
 
 	return proc;
@@ -152,6 +159,20 @@ proc_destroy(struct proc *proc)
 	 * reference to this structure. (Otherwise it would be
 	 * incorrect to destroy it.)
 	 */
+
+	// Set process table entry to null 
+/*    lock_acquire(master_lock); 
+      for (unsigned int i = 0; i < proctable->max; i++)
+      {
+        struct skeleboi * skeleboi_in_question = array_get(proctable, i);
+        if (skeleboi_in_question->p_id == p->p_id)
+        {
+          skeleboi_in_question->p_this = NULL;
+          skeleboi_in_question->terminated = true; 
+          break;
+        }
+      }
+    lock_release(master_lock);*/
 
 	/* VFS fields */
 	if (proc->p_cwd) {
