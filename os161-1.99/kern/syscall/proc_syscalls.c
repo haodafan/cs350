@@ -50,9 +50,9 @@ void sys__exit(int exitcode) {
   lock_release(master_lock);*/
 
   // NEW DOCTRINE: SKELETON PROCTABLE 
-  // UPDATE THE PROCESS TABLE 
+  // UPDATE THE PROCESS TABLiE 
   lock_acquire(master_lock); 
-    for (unsigned int i = 0; i < proctable->max; i++)
+    for (unsigned int i = 0; i < array_num(proctable); i++)
     {
       struct skeleboi * skeleboi_in_question = array_get(proctable, i);
 
@@ -71,6 +71,14 @@ void sys__exit(int exitcode) {
         skeleboi_in_question->terminated = true; 
         skeleboi_in_question->exitcode = exitcode;
       }
+      // IF THE PROCESS'S PARENT IS NULL AND IT IS NOT THIS PROCESS 
+      //    THEN THERE IS NO NEED TO REMOVE IT (since it will do it itself when it exits)
+      //    AND WE NEED TO ENSURE THE NEXT IF STATEMENT DOESNT PERFORM A TLB MISS
+      else if (skeleboi_in_question->p_parent == NULL)
+      {
+        // nothing happens
+      }
+      
       // IF THE PROCESS IS A CHILD OF THIS PROCESS AND THE PROCESS IS AN EMPTY SKELETON 
       //    THEN WE REMOVE THIS PROCESS FROM THE TABLE (since we can't call waitpid on it)
       else if (skeleboi_in_question->p_parent->p_id == p->p_id && skeleboi_in_question->p_this == NULL)
@@ -174,7 +182,7 @@ sys_fork(struct trapframe * parent_tf, pid_t * retval)
 	child->p_parent = curproc;
   // Create relationship in proctable (NEW DOCTRINE : SKELETON PROCTABLE : STRATEGY 1)
 	lock_acquire(master_lock); 
-    for (unsigned int i = 0; i < proctable->max; i++)
+    for (unsigned int i = 0; i < array_num(proctable); i++)
     {
       struct skeleboi * skeleboi_in_question = array_get(proctable, i);
       if (skeleboi_in_question->p_id == child->p_id) // child process skeleton detected
@@ -242,7 +250,7 @@ sys_waitpid(pid_t pid,
   // if the process id does not correspond to your children, then you must return an ERROR code
   bool isChild = false; 
   struct skeleboi * s_myChild;
-  for (unsigned int i = 0; i < proctable->max; i++) // NEW DOCTRINE: SKELETON PROCTABLE (STRATEGY ONE)
+  for (unsigned int i = 0; i < array_num(proctable); i++) // NEW DOCTRINE: SKELETON PROCTABLE (STRATEGY ONE)
   {
     struct skeleboi* skeleboi_in_question = array_get(proctable, i);
     if (pid == skeleboi_in_question->p_id)
@@ -260,7 +268,7 @@ sys_waitpid(pid_t pid,
     }
   }
   if (!isChild)
-    return ERSCH; // no such process 
+    return ESRCH; // no such process 
 
 
 

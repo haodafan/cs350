@@ -96,7 +96,7 @@ struct skeleboi
 {
 	// the process
 	struct proc * p_this; 
-	struct proc * p_parent
+	struct proc * p_parent;
 	pid_t p_id;
 	bool terminated; 
 	int exitcode; 
