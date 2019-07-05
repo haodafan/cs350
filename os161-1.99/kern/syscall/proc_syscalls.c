@@ -316,6 +316,14 @@ sys_waitpid(pid_t pid,
   *retval = pid;
   return(0);
 }
+
+int
+sys_execv(const char *program, char **args)
+{
+	char*
+}
+
+
 // END OF OLD CODE ============================================================
 #else 
 
