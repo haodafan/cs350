@@ -13,6 +13,8 @@
 #include <opt-A2.h>
 #include <mips/trapframe.h>
 #include <synch.h>
+#include <kern/fcntl.h>
+#include <vfs.h>
 
   /* this implementation of sys__exit does not do anything with the exit code */
   /* this needs to be fixed to get exit() and waitpid() working properly */
@@ -332,8 +334,8 @@ sys_execv(const char *program, char **args)
   // Execv purges the old address space and replaces it with a new one, thus to prevent that problem we will need 
   // to copy the string into the kernel space before destroying the user space. 
 
-  int program_size = 0; 
-  while (program[program_size] != '\0')
+  int program_charsize = 0; 
+  while (program[program_charsize] != '\0')
   {
     program_charsize++; 
   }
