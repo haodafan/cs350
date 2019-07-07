@@ -320,7 +320,99 @@ sys_waitpid(pid_t pid,
 int
 sys_execv(const char *program, char **args)
 {
-	char*
+  // Step 1: Count the number of arguments and copy them into the kernel 
+  int argnum = 0; 
+  while (args[argnum] != NULL)
+  {
+    argnum++; 
+  }
+  
+  // Step 2: Copy program file into kernel 
+  // The program path passed in is a pointer to string in user-level address space. 
+  // Execv purges the old address space and replaces it with a new one, thus to prevent that problem we will need 
+  // to copy the string into the kernel space before destroying the user space. 
+
+  int program_size = 0; 
+  while (program[program_size] != '\0')
+  {
+    program_charsize++; 
+  }
+  
+  // Does this count as passing to kernel stack ??? :'( 
+  char * progname = kmalloc(sizeof(char) * (program_charsize + 1)); // +1 for null terminator
+  for (int i = 0; i < program_charsize + 1; i++) // idk if i should have used strcpy() instead 
+  {
+    progname[i] = program[i];
+  }
+
+  // EXTRA STEP: SAVE THE CURRENT ADDRSPACE SO WE CAN DELETE IT? 
+  struct addrspace *oldas = curproc_getas(); 
+  
+  // Step 3,4,5 : done using runprogram 
+  // ========== Here lies the copy-pasted code of runprogram ==========
+  // progname is the parameter from runprogram 
+  struct addrspace *as;
+  struct vnode *v;
+  vaddr_t entrypoint, stackptr;
+  int result;
+
+  /* Open the file. */
+  result = vfs_open(progname, O_RDONLY, 0, &v);
+  if (result) {
+    return result;
+  }
+
+  /* We should be a new process. */
+  // KASSERT(curproc_getas() == NULL); // Haoda change: not necessarily!
+
+  /* Create a new address space. */
+  as = as_create();
+  if (as ==NULL) {
+    vfs_close(v);
+    return ENOMEM;
+  }
+
+  /* Switch to it and activate it. */
+  curproc_setas(as);
+  as_activate();
+
+  /* Load the executable. */
+  result = load_elf(v, &entrypoint);
+  if (result) {
+    /* p_addrspace will go away when curproc is destroyed */
+    vfs_close(v);
+    return result;
+  }
+
+  /* Done with the file now. */
+  vfs_close(v);
+
+  /* Define the user stack in the address space */
+  result = as_define_stack(as, &stackptr);
+  if (result) {
+    /* p_addrspace will go away when curproc is destroyed */
+    return result;
+  }
+
+  // Haoda change: We do enter_new_process and end code things later
+
+  // ========== END OF COPY PASTED RUNPROGRAM ==========
+
+  // Step 6: Need to copy arguments into new address space. We will not deal with argument passing right now
+
+  // Step 7: Delete old addrspace 
+  kfree(oldas); 
+
+  // Step 8: Call enter_new_process with address to the arguments on the stack, 
+  //         the stack pointer, and the program entry point 
+  
+  /* Warp to user mode. */
+  enter_new_process(0 /*argc*/, NULL /*userspace addr of argv*/,
+        stackptr, entrypoint); // Note: we will do argument passing later
+  
+  /* enter_new_process does not return. */
+  panic("enter_new_process returned\n");
+  return EINVAL;
 }
 
 
