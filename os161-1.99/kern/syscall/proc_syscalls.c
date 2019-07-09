@@ -319,15 +319,27 @@ sys_waitpid(pid_t pid,
   return(0);
 }
 
+
+// sys_execv(const char *program, char ** args)
 int
-sys_execv(const char *program, char **args)
+sys_execv(userptr_t program, userptr_t args)
 {
   // Step 1: Count the number of arguments and copy them into the kernel 
   int argnum = 0; 
-  while (args[argnum] != NULL)
+  while (((char**)args)[argnum] != NULL) // dis right??? ?_? 
   {
     argnum++; 
   }
+
+  char ** kargs = kmalloc(sizeof(char*) * argnum); 
+  for (int i = 0; i < argnum; i++)
+  {
+    int got = 0; 
+    char * kargv = kmalloc(sizeof(char) * (strlen(args[i]) + 1));
+    int res = copyinstr((const_userptr) ((char**)args)[i], kargv, strlen(args[i]) + 1, &got);
+    kargs[i] = kargv; 
+  }
+
   
   // Step 2: Copy program file into kernel 
   // The program path passed in is a pointer to string in user-level address space. 
@@ -335,7 +347,7 @@ sys_execv(const char *program, char **args)
   // to copy the string into the kernel space before destroying the user space. 
 
   int program_charsize = 0; 
-  while (program[program_charsize] != '\0')
+  while (((char*)program)[program_charsize] != '\0')
   {
     program_charsize++; 
   }
@@ -344,7 +356,7 @@ sys_execv(const char *program, char **args)
   char * progname = kmalloc(sizeof(char) * (program_charsize + 1)); // +1 for null terminator
   for (int i = 0; i < program_charsize + 1; i++) // idk if i should have used strcpy() instead 
   {
-    progname[i] = program[i];
+    progname[i] = ((char*)program)[i];
   }
 
   // EXTRA STEP: SAVE THE CURRENT ADDRSPACE SO WE CAN DELETE IT? 
@@ -400,7 +412,27 @@ sys_execv(const char *program, char **args)
 
   // ========== END OF COPY PASTED RUNPROGRAM ==========
 
-  // Step 6: Need to copy arguments into new address space. We will not deal with argument passing right now
+  // Step 6: Need to copy arguments into new address space. 
+  vaddr_t ogstackptr = stackptr; 
+
+  // 6.1 : Copy Arguments onto the user stack as part of as_define_stack
+  //*stackptr = argnum; // argc 
+  //stackptr += 4; 
+  for (int i = 0; i < argnum; i++)
+  {
+    //int got; 
+    //char * argv = malloc(sizeof(char) * (strlen(args[i]) + 1)); 
+    //result = copyoutstr(kargs[i], argv, strlen(args[i]), &got);
+    
+    if (result != 0)
+      return result; 
+
+    *stackptr = argv; 
+    stackptr += 4; 
+  }
+  // may need to HARD CODE space allocation into user stack (no malloc, just increment stack pointer)
+
+
 
   // Step 7: Delete old addrspace 
   kfree(oldas); 
