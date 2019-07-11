@@ -85,7 +85,7 @@ int nettest(int, char **);
 int runprogram(char *progname);
 
 /* New Routine lmao good one haoda xd */
-int runprogram_args(char* progname, char** args);
+int runprogram_args(char* progname, char** args, int nargs);
 
 /* Kernel menu system. */
 void menu(char *argstr);

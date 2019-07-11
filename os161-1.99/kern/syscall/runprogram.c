@@ -106,33 +106,141 @@ runprogram(char *progname)
 	return EINVAL;
 }
 
-// haoda's really dumb roundabout way of adding support for arguments by calling execv
-int runprogram_args(char* progname, char** args)
+int runprogram_args(char* progname, char** args, int nargs)
 {
-	struct addrspace *as;
-	struct vnode *v;
-	vaddr_t entrypoint, stackptr;
-	int result;
+  // CODE COPIED FROM EXECV 
 
-	/* Open the file. */
-	result = vfs_open(progname, O_RDONLY, 0, &v);
-	if (result) {
-		return result;
-	}
 
-	/* We should be a new process. */
-	KASSERT(curproc_getas() == NULL);
+  struct addrspace *as;
+  struct vnode *v;
+  vaddr_t entrypoint, stackptr;
+  int result;
 
-	/* Create a new address space. */
-	as = as_create();
-	if (as ==NULL) {
-		vfs_close(v);
-		return ENOMEM;
-	}
+  /* Open the file. */
+  result = vfs_open(progname, O_RDONLY, 0, &v);
+  if (result) {
+    return result;
+  }
 
-	curproc_setas(as);
+  /* We should be a new process. */
+  // KASSERT(curproc_getas() == NULL); // Haoda change: not necessarily!
 
-	sys_execv((userptr_t) progname, (userptr_t) args);
-	panic("execv has returned!");
+  /* Create a new address space. */
+  as = as_create();
+  if (as ==NULL) {
+    vfs_close(v);
+    return ENOMEM;
+  }
+
+  /* Switch to it and activate it. */
+  curproc_setas(as);
+  as_activate();
+
+  /* Load the executable. */
+  result = load_elf(v, &entrypoint);
+  if (result) {
+    /* p_addrspace will go away when curproc is destroyed */
+    vfs_close(v);
+    return result;
+  }
+
+  /* Done with the file now. */
+  vfs_close(v);
+
+  /* Define the user stack in the address space */
+  result = as_define_stack(as, &stackptr);
+  if (result) {
+    /* p_addrspace will go away when curproc is destroyed */
+    return result;
+  }
+
+  // Haoda change: We do enter_new_process and end code things later
+
+  // ========== END OF COPY PASTED RUNPROGRAM ==========
+
+  // Step 6: Need to copy arguments into new address space. 
+  vaddr_t ogstackptr = stackptr; 
+
+  // The user stack is composed of 2 parts: 
+  // (bottom of stack)  -->  (top of stack) 
+  // 1) THE STRING ARGS ; 2) THE POINTERS WHICH POINT TO THE STRING ARGS 
+  
+  userptr_t * userargsptr = kmalloc(sizeof(char*) * nargs);  
+  //panic("this part of the code is reached 0");
+  // 6.1 : Add sring args onto the user stack (needs to be on the STACK, not the heap)
+  int allocated_size; 
+  for (int i = 0; i < nargs; i++) 
+  {
+	  // We need to ensure we have enough space for the string 
+	  unsigned int length = strlen(kargs[i]) + 1; // +1 for null terminator
+	  unsigned int used = 0; 
+	  // We know each char is 1 byte 
+	  allocated_size = ROUNDUP(length, 8); 
+	  stackptr = stackptr - allocated_size; 
+	  //panic((char*)kargs[i]); 
+	  result = copyoutstr(args[i], (userptr_t) stackptr, length, &used); // Copy into stack location
+	  if (result != 0) return result; // idk this seems right i sppose 
+	 //kprintf(((char*)stackptr)); // debugging
+         //panic(((char*)stackptr)); 
+	  userargsptr[i] = (userptr_t) stackptr; // convert to user pointer 
+	 //panic("the end of the step 6.1 for loop");
+	 //kprintf((char*)stackptr);
+	 //kprintf("\n"); // DEBUGGING 
+  }
+  
+  
+  // 6.2 : Add string pointers onto the user stack 
+  //       Note that stack items are 8-byte aligned, while pointers (like vaddr_t) are 4 byte
+  vaddr_t argvptr; 
+
+  // NULL will be on the BOTTOM of the stack, and thus is added first 
+  stackptr = stackptr - 4; 
+  char** nullptr = (char**) stackptr; 
+  *nullptr = NULL; 
+  
+  // Push in backwards order ... 
+  for (int i = nargs - 1; i >= 0; i--)
+  {
+	  stackptr = stackptr - 4; // 4 byte alignment ?? 
+	  //result = copyout(userargsptr[i], (userptr_t) stackptr, sizeof(char*)); // I think this is how you use copyout
+	  userptr_t * thisptr = (userptr_t *) stackptr; 
+	  *thisptr = userargsptr[i];
+	  if (i == 0) argvptr = stackptr; // set argument pointer to first argument
+	  //kprintf((char*)userargsptr[i]);
+	  //kprintf("\n"); //DEBUGGING
+  }
+  
+  stackptr = stackptr - 4; // artificial padding
+
+  // 6.1 : Copy Arguments onto the user stack as part of as_define_stack
+  //*stackptr = argnum; // argc 
+  //stackptr += 4; 
+  //for (int i = 0; i < argnum; i++)
+  //{
+    //int got; 
+    //char * argv = malloc(sizeof(char) * (strlen(args[i]) + 1)); 
+    //result = copyoutstr(kargs[i], argv, strlen(args[i]), &got);
+    
+  //  if (result != 0)
+  //    return result; 
+
+  //  *stackptr = argv; 
+  //  stackptr += 4; 
+  //}
+  //panic("this part of the code is reached 2"); 
+  // Step 7: Delete old addrspace 
+  //kfree(oldas); 
+
+  // Step 8: Call enter_new_process with address to the arguments on the stack, 
+  //         the stack pointer, and the program entry point 
+  
+  /* Warp to user mode. */
+  //kprintf(*((char**)argvptr));
+  enter_new_process(nargs/*argc*/, (userptr_t) argvptr /*userspace addr of argv*/,
+        stackptr, entrypoint); // Note: we will do argument passing later
+  (void) ogstackptr; // idk if we use it
+  /* enter_new_process does not return. */
+  panic("enter_new_process returned\n");
+  return EINVAL;
 }
 

@@ -102,7 +102,7 @@ cmd_progthread(void *ptr, unsigned long nargs)
 
 	strcpy(progname, args[0]);
 
-	result = runprogram_args((char*) progname, (char**) args[0]);
+	result = runprogram_args((char*) progname, (char**) args, (int) nargs);
 	//result = sys_execv((userptr_t) progname, (userptr_t) args); // Modification to support arguments
 
 	if (result) {
