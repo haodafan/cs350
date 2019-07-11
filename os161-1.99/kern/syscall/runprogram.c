@@ -106,3 +106,33 @@ runprogram(char *progname)
 	return EINVAL;
 }
 
+// haoda's really dumb roundabout way of adding support for arguments by calling execv
+int runprogram_args(char* progname, char** args)
+{
+	struct addrspace *as;
+	struct vnode *v;
+	vaddr_t entrypoint, stackptr;
+	int result;
+
+	/* Open the file. */
+	result = vfs_open(progname, O_RDONLY, 0, &v);
+	if (result) {
+		return result;
+	}
+
+	/* We should be a new process. */
+	KASSERT(curproc_getas() == NULL);
+
+	/* Create a new address space. */
+	as = as_create();
+	if (as ==NULL) {
+		vfs_close(v);
+		return ENOMEM;
+	}
+
+	curproc_setas(as);
+
+	sys_execv((userptr_t) progname, (userptr_t) args);
+	panic("execv has returned!");
+}
+
