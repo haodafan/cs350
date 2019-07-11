@@ -45,6 +45,8 @@
 #include <syscall.h>
 #include <test.h>
 
+#include <copyinout.h>
+
 /*
  * Load program "progname" and start running it in usermode.
  * Does not return except on error.
@@ -172,7 +174,7 @@ int runprogram_args(char* progname, char** args, int nargs)
   for (int i = 0; i < nargs; i++) 
   {
 	  // We need to ensure we have enough space for the string 
-	  unsigned int length = strlen(kargs[i]) + 1; // +1 for null terminator
+	  unsigned int length = strlen(args[i]) + 1; // +1 for null terminator
 	  unsigned int used = 0; 
 	  // We know each char is 1 byte 
 	  allocated_size = ROUNDUP(length, 8); 
