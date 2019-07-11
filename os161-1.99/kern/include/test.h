@@ -84,6 +84,9 @@ int nettest(int, char **);
 /* Routine for running a user-level program. */
 int runprogram(char *progname);
 
+/* New Routine lmao good one haoda xd */
+int runprogram_args(char* progname, char** args);
+
 /* Kernel menu system. */
 void menu(char *argstr);
 
