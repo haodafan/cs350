@@ -200,6 +200,15 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		return 0;
 	}
 
+	// No more empty TLB entries!! 
+	// If the TLB is full, call tlb_random to write the entry into a random TLB slot. 
+	ehi = faultaddress; 
+	elo = paddr | TLBLO_DIRTY | TLBLO_VALID; 
+	tlb_random(ehi, elo);
+	splx(spl);
+	return 0; 
+
+	// This part should NEVER run
 	kprintf("dumbvm: Ran out of TLB entries - cannot handle page fault\n");
 	splx(spl);
 	return EFAULT;
