@@ -306,6 +306,7 @@ load_elf(struct vnode *v, vaddr_t *entrypoint)
 	*entrypoint = eh.e_entry;
 	
 	as->load_elfed = 1;// Load_elf read-only type shit
+	as_activate();
 
 	return 0;
 }

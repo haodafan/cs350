@@ -74,6 +74,8 @@ void
 kill_curthread(vaddr_t epc, unsigned code, vaddr_t vaddr)
 {
 	int sig = 0;
+	
+	kprintf("kill_curthread called."); //DEBUGGING
 
 	KASSERT(code < NTRAPCODES);
 	switch (code) {
@@ -128,7 +130,7 @@ kill_curthread(vaddr_t epc, unsigned code, vaddr_t vaddr)
 
 		//thread_exit(); 
 		//panic("RETURN FROM EXIT???????");
-
+		kprintf("kill_curthread : code == EX_MOD \n"); 
 		sys__exit(EX_MOD);
 	}
 	

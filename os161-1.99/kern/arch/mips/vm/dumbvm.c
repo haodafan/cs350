@@ -129,7 +129,10 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		//int exitstuffs = _MKWAIT_SIG(curproc->p_exitcode);	
 		//sys__exit(_MKWAIT_SIG(VM_FAULT_READONLY));
 		//kill_curthread()
-		return EX_MOD; // try this
+		//kprintf("!!!!!!!!!!VM FAULT READONLY!!!!!!!!");
+		//sys__exit(EX_MOD); // try this
+		sys__exit(__WSIGNALED);
+		break;
 
 	    case VM_FAULT_READ:
 	    case VM_FAULT_WRITE:
@@ -205,7 +208,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		elo = paddr | TLBLO_DIRTY | TLBLO_VALID;
 		DEBUG(DB_VM, "dumbvm: 0x%x -> 0x%x\n", faultaddress, paddr);
 
-		if (as->load_elfed)
+		if (as->load_elfed == 1)
 			elo &= ~TLBLO_DIRTY; // Load TLB entries with TLBLO_DIRTY off (read-only)
 
 		tlb_write(ehi, elo, i);
@@ -215,19 +218,19 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 
 	// No more empty TLB entries!! 
 	// If the TLB is full, call tlb_random to write the entry into a random TLB slot. 
-	ehi = faultaddress; 
-	elo = paddr | TLBLO_DIRTY | TLBLO_VALID; 
+	//ehi = faultaddress; 
+	//elo = paddr | TLBLO_DIRTY | TLBLO_VALID; 
 
-	if (as->load_elfed)
-		elo &= ~TLBLO_DIRTY;// Load TLB entries with TLBLO_DIRTY off (read only)
+	//if (as->load_elfed)
+	//	elo &= ~TLBLO_DIRTY;// Load TLB entries with TLBLO_DIRTY off (read only)
 
 	tlb_random(ehi, elo);
 	splx(spl);
-	return 0; 
+	//return 0; 
 
 	// This part should NEVER run
-	kprintf("dumbvm: Ran out of TLB entries - cannot handle page fault\n");
-	splx(spl);
+	//kprintf("dumbvm: Ran out of TLB entries - cannot handle page fault\n");
+	//splx(spl);
 	return EFAULT;
 }
 
