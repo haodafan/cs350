@@ -162,7 +162,7 @@ load_elf(struct vnode *v, vaddr_t *entrypoint)
 
 	as = curproc_getas();
 
-	as->load_elfed = 1;// READ-ONLY type shit 
+	as->load_elfed = 0;// READ-ONLY type shit 
 
 	/*
 	 * Read the executable header from offset 0 in the file.

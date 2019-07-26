@@ -246,6 +246,8 @@ as_create(void)
 	as->as_npages2 = 0;
 	as->as_stackpbase = 0;
 
+	as->load_elfed = 0; // muh load elf
+
 	return as;
 }
 

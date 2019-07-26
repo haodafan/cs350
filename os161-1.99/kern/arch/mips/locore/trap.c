@@ -112,10 +112,24 @@ kill_curthread(vaddr_t epc, unsigned code, vaddr_t vaddr)
 	 * You will probably want to change this.
 	 */
 
-	if (sig == SIGSEGV)
+	if (code == EX_MOD)
 	{
 		// We will exit the current process if this is the case.
-		sys__exit(code); 
+
+		// THE FOLLOWING IS CODE FROM sys__exit(unsigned code)
+		//dstruct addrspace *as; 
+		//struct proc *p = curproc; 
+
+		//as_deactivate(); 
+		//as = curproc_setas(NULL);
+		//as_destroy(as);
+		//proc_remthread(curthread);
+		//proc_destroy(p)
+
+		//thread_exit(); 
+		//panic("RETURN FROM EXIT???????");
+
+		sys__exit(EX_MOD);
 	}
 	
 	kprintf("Fatal user mode trap %u sig %d (%s, epc 0x%x, vaddr 0x%x)\n",
