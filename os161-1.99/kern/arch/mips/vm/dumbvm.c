@@ -208,7 +208,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		elo = paddr | TLBLO_DIRTY | TLBLO_VALID;
 		DEBUG(DB_VM, "dumbvm: 0x%x -> 0x%x\n", faultaddress, paddr);
 
-		if (as->load_elfed == 1)
+		if (as->load_elfed == 1 && faultaddress >= vbase1 && faultaddress < vtop1)
 			elo &= ~TLBLO_DIRTY; // Load TLB entries with TLBLO_DIRTY off (read-only)
 
 		tlb_write(ehi, elo, i);
@@ -218,11 +218,11 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 
 	// No more empty TLB entries!! 
 	// If the TLB is full, call tlb_random to write the entry into a random TLB slot. 
-	//ehi = faultaddress; 
-	//elo = paddr | TLBLO_DIRTY | TLBLO_VALID; 
+	ehi = faultaddress; 
+	elo = paddr | TLBLO_DIRTY | TLBLO_VALID; 
 
-	//if (as->load_elfed)
-	//	elo &= ~TLBLO_DIRTY;// Load TLB entries with TLBLO_DIRTY off (read only)
+	if (as->load_elfed == 1 && faultaddress >= vbase1 && faultaddress < vtop1)
+		elo &= ~TLBLO_DIRTY;// Load TLB entries with TLBLO_DIRTY off (read only)
 
 	tlb_random(ehi, elo);
 	splx(spl);
