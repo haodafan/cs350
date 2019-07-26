@@ -38,6 +38,9 @@
 #include <addrspace.h>
 #include <vm.h>
 
+#include <syscall.h>
+#include <kern/wait.h>
+
 /*
  * Dumb MIPS-only "VM system" that is intended to only be just barely
  * enough to struggle off the ground.
@@ -121,7 +124,11 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 	switch (faulttype) {
 	    case VM_FAULT_READONLY:
 		/* We always create pages read-write, so we can't get this */
-		panic("dumbvm: got VM_FAULT_READONLY\n");
+		//panic("dumbvm: got VM_FAULT_READONLY\n"); // RULE #1: DON'T PANIC :^) 
+		int exitstuffs = _MKWAIT_SIG(curproc->p_exitcode);	
+		sys__exit(exitstuffs);
+
+
 	    case VM_FAULT_READ:
 	    case VM_FAULT_WRITE:
 		break;
@@ -195,6 +202,10 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		ehi = faultaddress;
 		elo = paddr | TLBLO_DIRTY | TLBLO_VALID;
 		DEBUG(DB_VM, "dumbvm: 0x%x -> 0x%x\n", faultaddress, paddr);
+
+		if (as->load_elfed)
+			elo &= ~TLBLO_DIRTY; // Load TLB entries with TLBLO_DIRTY off (read-only)
+
 		tlb_write(ehi, elo, i);
 		splx(spl);
 		return 0;
@@ -204,6 +215,10 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 	// If the TLB is full, call tlb_random to write the entry into a random TLB slot. 
 	ehi = faultaddress; 
 	elo = paddr | TLBLO_DIRTY | TLBLO_VALID; 
+
+	if (as->load_elfed)
+		elo &= ~TLBLO_DIRTY;// Load TLB entries with TLBLO_DIRTY off (read only)
+
 	tlb_random(ehi, elo);
 	splx(spl);
 	return 0; 
