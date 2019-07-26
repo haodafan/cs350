@@ -40,6 +40,7 @@
 
 #include <syscall.h>
 #include <kern/wait.h>
+#include <mips/trapframe.h>
 
 /*
  * Dumb MIPS-only "VM system" that is intended to only be just barely
