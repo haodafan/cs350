@@ -75,7 +75,7 @@ kill_curthread(vaddr_t epc, unsigned code, vaddr_t vaddr)
 {
 	int sig = 0;
 	
-	kprintf("kill_curthread called."); //DEBUGGING
+	//kprintf("kill_curthread called."); //DEBUGGING
 
 	KASSERT(code < NTRAPCODES);
 	switch (code) {
@@ -114,7 +114,7 @@ kill_curthread(vaddr_t epc, unsigned code, vaddr_t vaddr)
 	 * You will probably want to change this.
 	 */
 
-	if (code == EX_MOD)
+	if (sig == SIGSEGV)
 	{
 		// We will exit the current process if this is the case.
 
@@ -130,8 +130,8 @@ kill_curthread(vaddr_t epc, unsigned code, vaddr_t vaddr)
 
 		//thread_exit(); 
 		//panic("RETURN FROM EXIT???????");
-		kprintf("kill_curthread : code == EX_MOD \n"); 
-		sys__exit(EX_MOD);
+		//kprintf("kill_curthread : code == EX_MOD \n"); 
+		sys__exit(code);
 	}
 	
 	kprintf("Fatal user mode trap %u sig %d (%s, epc 0x%x, vaddr 0x%x)\n",

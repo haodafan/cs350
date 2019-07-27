@@ -73,10 +73,10 @@ vm_bootstrap(void)
 
 	coremap = (struct pageitem*) ram_stealmem(1);
 
-	ram_getsize(paddrlow, paddrhigh);
+	ram_getsize(&paddrlow, &paddrhigh);
 	totalpages = (paddrhigh - paddrlow) / PAGE_SIZE; 
 
-	for (int i = 0; i < totalpages; i++)
+	for (unsigned long i = 0; i < totalpages; i++)
 	{
 		// Here we initialize the coremap 
 		coremap[i].occupied = false; 
@@ -87,7 +87,7 @@ vm_bootstrap(void)
 bool 
 is_adequate_block(unsigned long i, unsigned long npages)
 {
-	for (int k = i; k < i + npages; k++)
+	for (unsigned long k = i; k < i + npages; k++)
 	{
 		if (coremap[i + k].occupied)
 			return false;
@@ -112,9 +112,9 @@ paddr_t
 ram_borrowmem(unsigned long npages)
 {
 	// Find the first page with contiguity of at least (npages - 1) 
-	for (int i = 0; i < totalpages; i++)
+	for (unsigned long i = 0; i < totalpages; i++)
 	{
-		if (coremap[i].occuped == false && is_adequate_block(i, npages))
+		if (coremap[i].occupied == false && is_adequate_block(i, npages))
 		{
 			occupy_pages(i, npages);
 			return paddrlow + (i * PAGE_SIZE);
@@ -130,7 +130,7 @@ ram_borrowmem(unsigned long npages)
 void 
 occupy_pages(unsigned long i, unsigned long npages)
 {
-	for (int k = i; k < i + npages; k++)
+	for (unsigned long k = i; k < i + npages; k++)
 	{
 		if (!coremap[i + k].occupied)
 		{
@@ -139,7 +139,7 @@ occupy_pages(unsigned long i, unsigned long npages)
 		}
 		else 
 		{
-			panic("theres something wrong with your fucking is_adequate_block!")
+			panic("theres something wrong with your fucking is_adequate_block!");
 		}
 	}
 }
@@ -164,7 +164,7 @@ free_corepages(vaddr_t addr)
 	unsigned long index = (addr + paddrlow) / PAGE_SIZE; 
 
 	coremap[index].occupied = 0; 
-	for (int i = 0; i < coremap[index].blocksize; i++)
+	for (unsigned long i = 0; i < coremap[index].blocksize; i++)
 	{
 		coremap[index + i].occupied = 0; 
 		coremap[index + i].blocksize = 0;
