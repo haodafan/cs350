@@ -54,11 +54,94 @@
  * Wrap rma_stealmem in a spinlock.
  */
 static struct spinlock stealmem_lock = SPINLOCK_INITIALIZER;
+static volatile struct pageitem * coremap; 
+static volatile unsigned long totalpages; 
+
+static paddr_t paddrlow; 
+static paddr_t paddrhigh; 
+
+struct pageitem
+{
+	//paddr_t paddr; 
+	bool occupied; 
+	unsigned int blocksize; // The number of contiguous pages after it with the same 'occupation status'
+};
 
 void
 vm_bootstrap(void)
 {
-	/* Do nothing. */
+
+	coremap = (struct pageitem*) ram_stealmem(1);
+
+	ram_getsize(paddrlow, paddrhigh);
+	totalpages = (paddrhigh - paddrlow) / PAGE_SIZE; 
+
+	for (int i = 0; i < totalpages; i++)
+	{
+		// Here we initialize the coremap 
+		coremap[i].occupied = false; 
+		coremap[i].blocksize = totalpages - (i+1);
+	}
+}
+
+bool 
+is_adequate_block(unsigned long i, unsigned long npages)
+{
+	for (int k = i; k < i + npages; k++)
+	{
+		if (coremap[i + k].occupied)
+			return false;
+	}
+	return true;
+}
+
+static 
+paddr_t 
+core_getpages(unsigned long npages)
+{
+	paddr_t addr; 
+
+	spinlock_acquire(&stealmem_lock);
+		paddr_t rammytheram = ram_borrowmem(npages);
+	spinlock_release(&stealmem_lock);
+	return rammytheram;
+}
+
+static 
+paddr_t
+ram_borrowmem(unsigned long npages)
+{
+	// Find the first page with contiguity of at least (npages - 1) 
+	for (int i = 0; i < totalpages; i++)
+	{
+		if (coremap[i].occuped == false && is_adequate_block(i, npages))
+		{
+			occupy_pages(i, npages);
+			return paddrlow + (i * PAGE_SIZE);
+		}
+		else 
+		{
+			// oh no
+			panic("WE RAN OUT OF MEMORY ??????????");
+		}
+	}
+}
+
+void 
+occupy_pages(unsigned long i, unsigned long npages)
+{
+	for (int k = i; k < i + npages; k++)
+	{
+		if (!coremap[i + k].occupied)
+		{
+			coremap[i + k].occupied = true;
+			coremap[i + k].blocksize = npages - (k + 1);
+		}
+		else 
+		{
+			panic("theres something wrong with your fucking is_adequate_block!")
+		}
+	}
 }
 
 static
@@ -75,12 +158,26 @@ getppages(unsigned long npages)
 	return addr;
 }
 
+void
+free_corepages(vaddr_t addr)
+{
+	unsigned long index = (addr + paddrlow) / PAGE_SIZE; 
+
+	coremap[index].occupied = 0; 
+	for (int i = 0; i < coremap[index].blocksize; i++)
+	{
+		coremap[index + i].occupied = 0; 
+		coremap[index + i].blocksize = 0;
+	}
+	coremap[index].blocksize = 0;
+}
+
 /* Allocate/free some kernel-space virtual pages */
 vaddr_t 
 alloc_kpages(int npages)
 {
 	paddr_t pa;
-	pa = getppages(npages);
+	pa = core_getpages(npages); //pa = getpages(npages);
 	if (pa==0) {
 		return 0;
 	}
@@ -91,8 +188,7 @@ void
 free_kpages(vaddr_t addr)
 {
 	/* nothing - leak the memory. */
-
-	(void)addr;
+	free_corepages(addr); // new plan: don't leak it
 }
 
 void
@@ -123,7 +219,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 	DEBUG(DB_VM, "dumbvm: fault: 0x%x\n", faultaddress);
 
 	switch (faulttype) {
-	    case VM_FAULT_READONLY:
+		case VM_FAULT_READONLY:
 		/* We always create pages read-write, so we can't get this */
 		//panic("dumbvm: got VM_FAULT_READONLY\n"); // RULE #1: DON'T PANIC :^) 
 		//int exitstuffs = _MKWAIT_SIG(curproc->p_exitcode);	
@@ -134,8 +230,8 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		sys__exit(__WSIGNALED);
 		break;
 
-	    case VM_FAULT_READ:
-	    case VM_FAULT_WRITE:
+		case VM_FAULT_READ:
+		case VM_FAULT_WRITE:
 		break;
 	    default:
 		return EINVAL;
