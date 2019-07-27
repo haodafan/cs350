@@ -56,6 +56,7 @@
 static struct spinlock stealmem_lock = SPINLOCK_INITIALIZER;
 static volatile struct pageitem * coremap; 
 static volatile unsigned long totalpages; 
+static bool memory_for_bootstrap = true;
 
 static paddr_t paddrlow; 
 static paddr_t paddrhigh; 
@@ -82,6 +83,8 @@ vm_bootstrap(void)
 		coremap[i].occupied = false; 
 		coremap[i].blocksize = totalpages - (i+1);
 	}
+
+	memory_for_bootstrap = false;
 }
 
 static
@@ -182,7 +185,12 @@ vaddr_t
 alloc_kpages(int npages)
 {
 	paddr_t pa;
-	pa = core_getppages(npages); //pa = getpages(npages);
+	
+	if (memory_for_bootstrap)
+		pa = getppages(npages);
+	else
+		pa = core_getppages(npages); //pa = getpages(npages);
+
 	if (pa==0) {
 		return 0;
 	}
@@ -192,8 +200,15 @@ alloc_kpages(int npages)
 void 
 free_kpages(vaddr_t addr)
 {
-	/* nothing - leak the memory. */
-	free_corepages(addr); // new plan: don't leak it
+	if (memory_for_bootstrap)
+	{
+		/* nothing - leak the memory. */
+	}
+	else 
+	{
+		free_corepages(addr); // new plan: don't leak it
+	}
+
 }
 
 void
