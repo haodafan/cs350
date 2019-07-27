@@ -95,16 +95,21 @@ is_adequate_block(unsigned long i, unsigned long npages)
 	return true;
 }
 
-static 
-paddr_t 
-core_getpages(unsigned long npages)
+void 
+occupy_pages(unsigned long i, unsigned long npages)
 {
-	paddr_t addr; 
-
-	spinlock_acquire(&stealmem_lock);
-		paddr_t rammytheram = ram_borrowmem(npages);
-	spinlock_release(&stealmem_lock);
-	return rammytheram;
+	for (unsigned long k = i; k < i + npages; k++)
+	{
+		if (!coremap[i + k].occupied)
+		{
+			coremap[i + k].occupied = true;
+			coremap[i + k].blocksize = npages - (k + 1);
+		}
+		else 
+		{
+			panic("theres something wrong with your fucking is_adequate_block!");
+		}
+	}
 }
 
 static 
@@ -127,21 +132,16 @@ ram_borrowmem(unsigned long npages)
 	}
 }
 
-void 
-occupy_pages(unsigned long i, unsigned long npages)
+static 
+paddr_t 
+core_getppages(unsigned long npages)
 {
-	for (unsigned long k = i; k < i + npages; k++)
-	{
-		if (!coremap[i + k].occupied)
-		{
-			coremap[i + k].occupied = true;
-			coremap[i + k].blocksize = npages - (k + 1);
-		}
-		else 
-		{
-			panic("theres something wrong with your fucking is_adequate_block!");
-		}
-	}
+	paddr_t addr; 
+
+	spinlock_acquire(&stealmem_lock);
+		paddr_t rammytheram = ram_borrowmem(npages);
+	spinlock_release(&stealmem_lock);
+	return rammytheram;
 }
 
 static
@@ -158,6 +158,7 @@ getppages(unsigned long npages)
 	return addr;
 }
 
+static
 void
 free_corepages(vaddr_t addr)
 {
@@ -177,7 +178,7 @@ vaddr_t
 alloc_kpages(int npages)
 {
 	paddr_t pa;
-	pa = core_getpages(npages); //pa = getpages(npages);
+	pa = core_getppages(npages); //pa = getpages(npages);
 	if (pa==0) {
 		return 0;
 	}
