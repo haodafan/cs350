@@ -56,7 +56,7 @@
 static struct spinlock stealmem_lock = SPINLOCK_INITIALIZER;
 static volatile struct pageitem * coremap; 
 static volatile unsigned long totalpages; 
-static bool memory_for_bootstrap = true;
+static volatile bool memory_for_bootstrap = true;
 
 static paddr_t paddrlow; 
 static paddr_t paddrhigh; 
@@ -78,12 +78,14 @@ vm_bootstrap(void)
 	int coremapsize = sizeof(struct pageitem) * totalpages;
 	int coremappages = (coremapsize / PAGE_SIZE) + 1;
 
-	coremap = kmalloc(coremapsize); 
+	coremap = (struct pageitem *) PADDR_TO_KVADDR(paddrlow); 
+
+	totalpages -= 1; // for safe measure lmao
 
 	for (unsigned long i = 0; i < totalpages; i++)
 	{
 
-		if (i < coremappages)
+		if (i < (unsigned long) coremappages)
 		{
 			// coremap keeps track of the space occupied by itself 
 			coremap[i].occupied = true;
@@ -95,8 +97,9 @@ vm_bootstrap(void)
 			coremap[i].blocksize = totalpages - (i+1);
 		}
 	}
-
+	spinlock_acquire(&stealmem_lock);
 	memory_for_bootstrap = false;
+	spinlock_release(&stealmem_lock);
 }
 
 static
@@ -138,30 +141,28 @@ ram_borrowmem(unsigned long npages)
 	{
 		if (coremap[i].occupied == false && is_adequate_block(i, npages))
 		{
+			kprintf("CORE PAGE FOUND AT %lu \n", i); // DEBUGGING
 			occupy_pages(i, npages);
 			return paddrlow + (i * PAGE_SIZE);
 		}
-		else 
-		{
-			// oh no
-			panic("WE RAN OUT OF MEMORY ??????????");
-		}
+		
 	}
+	panic("WE RAN OUT OF MEMORY ????? ");
 	// it should not return 
 	return 1;
 }
 
-static 
-paddr_t 
-core_getppages(unsigned long npages)
-{
-	paddr_t addr; 
-
-	spinlock_acquire(&stealmem_lock);
-		addr = ram_borrowmem(npages);
-	spinlock_release(&stealmem_lock);
-	return addr;
-}
+//static 
+//paddr_t 
+//core_getppages(unsigned long npages)
+//{
+//	paddr_t addr; 
+//	kprintf("GET CORE PAGES %lu \n", npages); // DEBUGGING
+//	spinlock_acquire(&stealmem_lock);
+//		addr = ram_borrowmem(npages);
+//	spinlock_release(&stealmem_lock);
+//	return addr;
+//}
 
 static
 paddr_t
@@ -169,27 +170,35 @@ getppages(unsigned long npages)
 {
 	paddr_t addr;
 
-	spinlock_acquire(&stealmem_lock);
+	kprintf("GET P PAGES %lu \n", npages); // DEBUGGING
 
-	addr = ram_stealmem(npages);
-	
+	spinlock_acquire(&stealmem_lock);
+	if (memory_for_bootstrap)
+		addr = ram_stealmem(npages);
+	else 
+		addr = ram_borrowmem(npages);
 	spinlock_release(&stealmem_lock);
 	return addr;
 }
 
 static
 void
-free_corepages(vaddr_t addr)
+free_corepages(paddr_t addr)
 {
-	unsigned long index = (addr + paddrlow) / PAGE_SIZE; 
+	spinlock_acquire(&stealmem_lock);
+	unsigned long index = (addr - paddrlow) / PAGE_SIZE; 
+	
+	kprintf("FREE CORE PAGES AT %lu\n", index); // DEBUGGING
 
 	coremap[index].occupied = 0; 
-	for (unsigned long i = 0; i < coremap[index].blocksize; i++)
+	for (unsigned long i = 1; i < coremap[index].blocksize; i++)
 	{
 		coremap[index + i].occupied = 0; 
 		coremap[index + i].blocksize = 0;
 	}
+	kprintf("%d pages freed.\n", coremap[index].blocksize);
 	coremap[index].blocksize = 0;
+	spinlock_release(&stealmem_lock);
 }
 
 /* Allocate/free some kernel-space virtual pages */
@@ -198,10 +207,7 @@ alloc_kpages(int npages)
 {
 	paddr_t pa;
 
-	if (memory_for_bootstrap)
-		pa = getppages(npages);
-	else
-		pa = core_getppages(npages); //pa = getpages(npages);
+	pa = getppages(npages);
 
 	if (pa==0) {
 		return 0;
@@ -212,13 +218,21 @@ alloc_kpages(int npages)
 void 
 free_kpages(vaddr_t addr)
 {
+	spinlock_acquire(&stealmem_lock);
 	if (memory_for_bootstrap)
 	{
+	spinlock_release(&stealmem_lock);
 		/* nothing - leak the memory. */
 	}
 	else 
 	{
-		free_corepages(addr); // new plan: don't leak it
+	spinlock_release(&stealmem_lock);
+		// new plan: let's NOT leak memory!
+		
+		// First: Convert to physical address 
+		paddr_t paddr = addr - MIPS_KSEG0; // since vaddr = paddr + MIPS_KSEG0
+		// Second: Free the pages in coremap
+		free_corepages(paddr); 
 	}
 
 }
