@@ -94,7 +94,7 @@ vm_bootstrap(void)
 		{
 			// initialization for the rest of the pages
 			coremap[i].occupied = false; 
-			coremap[i].blocksize = totalpages - (i+1);
+			coremap[i].blocksize = totalpages - i;
 		}
 	}
 	spinlock_acquire(&stealmem_lock);
@@ -123,7 +123,7 @@ occupy_pages(unsigned long i, unsigned long npages)
 		if (!coremap[i + k].occupied)
 		{
 			coremap[i + k].occupied = true;
-			coremap[i + k].blocksize = npages - (k + 1);
+			coremap[i + k].blocksize = npages - k;
 		}
 		else 
 		{
@@ -194,10 +194,10 @@ free_corepages(paddr_t addr)
 	for (unsigned long i = 1; i < coremap[index].blocksize; i++)
 	{
 		coremap[index + i].occupied = 0; 
-		coremap[index + i].blocksize = 0;
+		coremap[index + i].blocksize = 1;
 	}
 	kprintf("%d pages freed.\n", coremap[index].blocksize);
-	coremap[index].blocksize = 0;
+	coremap[index].blocksize = 1;
 	spinlock_release(&stealmem_lock);
 }
 
