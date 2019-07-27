@@ -215,6 +215,9 @@ sys_fork(struct trapframe * parent_tf, pid_t * retval)
 				(void*)copy_tf,
 				0);
 				
+  // We no longer need the kernel's copy of the trapframe 
+  kfree(copy_tf);
+
 	// there was a problem with thread forks
 	if (code != 0)
 		return ENOMEM; // probably a memory error????? 
@@ -302,12 +305,14 @@ sys_waitpid(pid_t pid,
   // STRATEGY 1
   int exitstatus = _MKWAIT_EXIT(s_myChild->exitcode); // ???
   // No need to tell dead child it can delete itself
+
+  // But we do need to delete the dead child's skeleton! 
+  kfree(s_myChild);
   
   if (options != 0) {
     return(EINVAL);
   }
 
-  // ??? 
 
   /* for now, just pretend the exitstatus is 0 */
   //exitstatus = 0;
