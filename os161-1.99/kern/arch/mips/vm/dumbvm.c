@@ -71,17 +71,29 @@ struct pageitem
 void
 vm_bootstrap(void)
 {
-
-	coremap = (struct pageitem*) ram_stealmem(1);
-
 	ram_getsize(&paddrlow, &paddrhigh);
 	totalpages = (paddrhigh - paddrlow) / PAGE_SIZE; 
 
+	// Calculate coremap size 
+	int coremapsize = sizeof(struct pageitem) * totalpages;
+	int coremappages = (coremapsize / PAGE_SIZE) + 1;
+
+	coremap = kmalloc(coremapsize); 
+
 	for (unsigned long i = 0; i < totalpages; i++)
 	{
-		// Here we initialize the coremap 
-		coremap[i].occupied = false; 
-		coremap[i].blocksize = totalpages - (i+1);
+
+		if (i < coremappages)
+		{
+			// coremap keeps track of the space occupied by itself 
+			coremap[i].occupied = true;
+		}
+		else 
+		{
+			// initialization for the rest of the pages
+			coremap[i].occupied = false; 
+			coremap[i].blocksize = totalpages - (i+1);
+		}
 	}
 
 	memory_for_bootstrap = false;
@@ -185,7 +197,7 @@ vaddr_t
 alloc_kpages(int npages)
 {
 	paddr_t pa;
-	
+
 	if (memory_for_bootstrap)
 		pa = getppages(npages);
 	else
