@@ -84,6 +84,7 @@ vm_bootstrap(void)
 	}
 }
 
+static
 bool 
 is_adequate_block(unsigned long i, unsigned long npages)
 {
@@ -95,6 +96,7 @@ is_adequate_block(unsigned long i, unsigned long npages)
 	return true;
 }
 
+static
 void 
 occupy_pages(unsigned long i, unsigned long npages)
 {
@@ -130,6 +132,8 @@ ram_borrowmem(unsigned long npages)
 			panic("WE RAN OUT OF MEMORY ??????????");
 		}
 	}
+	// it should not return 
+	return 1;
 }
 
 static 
@@ -139,9 +143,9 @@ core_getppages(unsigned long npages)
 	paddr_t addr; 
 
 	spinlock_acquire(&stealmem_lock);
-		paddr_t rammytheram = ram_borrowmem(npages);
+		addr = ram_borrowmem(npages);
 	spinlock_release(&stealmem_lock);
-	return rammytheram;
+	return addr;
 }
 
 static
