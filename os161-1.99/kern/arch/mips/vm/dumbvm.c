@@ -170,7 +170,7 @@ getppages(unsigned long npages)
 {
 	paddr_t addr;
 
-	kprintf("GET P PAGES %lu \n", npages); // DEBUGGING
+	kprintf("GET P PAGES %lu , bootstrap = %d \n", npages, memory_for_bootstrap); // DEBUGGING
 
 	spinlock_acquire(&stealmem_lock);
 	if (memory_for_bootstrap)
@@ -400,10 +400,12 @@ as_create(void)
 void
 as_destroy(struct addrspace *as)
 {
-	//if (as->as_vbase1 != 0)
-	//	free_kpages(as->as_vbase1); 
-	//if (as->as_vbase2 != 0)
-	//	free_kpages(as->as_vbase2);	
+	//free_kpages(as->as_vbase1); 
+	//free_kpages(as->as_vbase2);	
+	
+	free_kpages(PADDR_TO_KVADDR(as->as_pbase1)); 
+	free_kpages(PADDR_TO_KVADDR(as->as_pbase2)); 
+	free_kpages(PADDR_TO_KVADDR(as->as_stackpbase));
 	
 	kfree(as);
 }
