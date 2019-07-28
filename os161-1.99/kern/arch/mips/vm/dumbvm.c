@@ -94,7 +94,7 @@ vm_bootstrap(void)
 		{
 			// initialization for the rest of the pages
 			coremap[i].occupied = false; 
-			coremap[i].blocksize = totalpages - i;
+			coremap[i].blocksize = 1;
 		}
 	}
 	spinlock_acquire(&stealmem_lock);
@@ -141,7 +141,7 @@ ram_borrowmem(unsigned long npages)
 	{
 		if (coremap[i].occupied == false && is_adequate_block(i, npages))
 		{
-			kprintf("CORE PAGE FOUND AT %lu \n", i); // DEBUGGING
+			kprintf("CORE PAGE FOUND AT %lu , %lu \n", i, (unsigned long) (paddrlow + (i * PAGE_SIZE))); // DEBUGGING
 			occupy_pages(i, npages);
 			return paddrlow + (i * PAGE_SIZE);
 		}
@@ -188,7 +188,7 @@ free_corepages(paddr_t addr)
 	spinlock_acquire(&stealmem_lock);
 	unsigned long index = (addr - paddrlow) / PAGE_SIZE; 
 	
-	kprintf("FREE CORE PAGES AT %lu\n", index); // DEBUGGING
+	kprintf("FREE CORE PAGES AT %lu , %lu\n", index, (unsigned long) addr); // DEBUGGING
 
 	coremap[index].occupied = 0; 
 	for (unsigned long i = 1; i < coremap[index].blocksize; i++)
@@ -400,6 +400,11 @@ as_create(void)
 void
 as_destroy(struct addrspace *as)
 {
+	//if (as->as_vbase1 != 0)
+	//	free_kpages(as->as_vbase1); 
+	//if (as->as_vbase2 != 0)
+	//	free_kpages(as->as_vbase2);	
+	
 	kfree(as);
 }
 
