@@ -100,6 +100,7 @@ vm_bootstrap(void)
 	spinlock_acquire(&stealmem_lock);
 	memory_for_bootstrap = false;
 	spinlock_release(&stealmem_lock);
+	kprintf("coremap address: %d\n", (int) coremap); // DEBUGGING
 }
 
 static
@@ -118,7 +119,7 @@ static
 void 
 occupy_pages(unsigned long i, unsigned long npages)
 {
-	for (unsigned long k = i; k < i + npages; k++)
+	for (unsigned long k = 0; k < npages; k++)
 	{
 		if (!coremap[i + k].occupied)
 		{
