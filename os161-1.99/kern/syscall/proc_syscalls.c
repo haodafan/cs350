@@ -216,7 +216,7 @@ sys_fork(struct trapframe * parent_tf, pid_t * retval)
 				0);
 				
   // We no longer need the kernel's copy of the trapframe 
-  kfree(copy_tf);
+  //kfree(copy_tf);
 
 	// there was a problem with thread forks
 	if (code != 0)
@@ -307,7 +307,7 @@ sys_waitpid(pid_t pid,
   // No need to tell dead child it can delete itself
 
   // But we do need to delete the dead child's skeleton! 
-  kfree(s_myChild);
+  //kfree(s_myChild); // maybe we dont
   
   if (options != 0) {
     return(EINVAL);
